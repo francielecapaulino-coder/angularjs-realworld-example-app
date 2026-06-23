@@ -29,7 +29,7 @@ de tooling antes de qualquer código de produto.
 - [ ] `.devcontainer/devcontainer.json` aponta para Node LTS (≥ 18).
 - [ ] Nenhum arquivo de `documentacao/` ou `harness/` commitado.
 
-**Status atual:** `EMPTY`
+**Status atual:** `COMPLETE`
 
 ---
 

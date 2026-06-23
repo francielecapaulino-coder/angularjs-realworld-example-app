@@ -1,7 +1,7 @@
 # PLAN — 001-fundacao
 
 ## Status
-State: PLANNED
+State: READY
 
 ## Objetivo
 Estabelecer a infraestrutura de processo da Fase 1: atualizar o DevContainer

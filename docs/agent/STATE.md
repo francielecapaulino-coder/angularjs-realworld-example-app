@@ -1,14 +1,14 @@
 # STATE
 
-State: EVALUATING
-Current phase: 1 — Fundação
-Last completed phase: none
-Active work unit: docs/agent/work/001-fundacao
+State: READY
+Current phase: 2 — Rede de segurança
+Last completed phase: 1 — Fundação
+Active work unit: none
 
 ## Briefing — o que o próximo agente faz primeiro
 1. Ler `docs/agent/OPERATING-GUIDE.md` e este `STATE.md`.
-2. Ler `docs/agent/work/001-fundacao/PLAN.md`, `PROGRESS.md` e `REVIEW.md`.
-3. Revisar o PR #1 e, se aprovado, rodar o Prompt 05 — Encerrar & Handoff.
+2. Ler `docs/agent/context/CHARTER.md`, `ROADMAP.md` e `SOURCES.md`.
+3. Iniciar a primeira slice da Fase 2 via Prompt 01 — Planejar & Triar: documentar o contrato RealWorld consumido em OpenAPI 3 ou criar a base de E2E Playwright contra o app AngularJS atual.
 
 ## Não faça
 - Não inventar requisitos de produto.
