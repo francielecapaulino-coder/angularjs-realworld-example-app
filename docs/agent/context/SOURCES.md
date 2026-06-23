@@ -10,6 +10,7 @@ Registro de todas as fontes que governam o trabalho agêntico neste repositório
 | `docs/agent/OPERATING-GUIDE.md` | operating-guide | authoritative | in-repo | Contrato de trabalho do agente: ciclo, estados, categorias de risco, caminhos operacionais, papéis, gates, tiers. |
 | `README.md` | onboarding | reference | in-repo | Getting started, URL da demo, link para tutorial Thinkster. |
 | `src/js/config/app.constants.js` | config | reference | in-repo | URL base da API e chave JWT (`jwtToken`) — imutáveis até migração. |
+| `docs/api/realworld-openapi.yaml` | api | authoritative | in-repo | Contrato RealWorld consumido pelo app atual; fonte para testes de contrato da Fase 2 e paridade da migração. |
 
 ## SKILL.md
 Nenhum SKILL.md registrado até o momento. Se o usuário fornecer playbooks de

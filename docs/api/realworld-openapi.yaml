@@ -1,0 +1,769 @@
+openapi: 3.0.3
+info:
+  title: RealWorld Conduit API — consumed contract
+  version: 1.0.0
+  description: >-
+    Contract consumed by this AngularJS Conduit frontend. The app uses the
+    RealWorld API shape and sends JWT credentials using the exact header format
+    `Authorization: Token <jwt>`. Examples use fictitious data only.
+servers:
+  - url: https://conduit.productionready.io/api
+    description: Production RealWorld API consumed by the legacy app
+security: []
+tags:
+  - name: Auth
+  - name: User
+  - name: Profiles
+  - name: Articles
+  - name: Comments
+  - name: Tags
+paths:
+  /users/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginUserRequest'
+      responses:
+        '200':
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /users:
+    post:
+      tags: [Auth]
+      summary: Register user
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUserRequest'
+      responses:
+        '201':
+          description: Registered user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /user:
+    get:
+      tags: [User]
+      summary: Get current user
+      operationId: getCurrentUser
+      security:
+        - TokenAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    put:
+      tags: [User]
+      summary: Update current user
+      operationId: updateCurrentUser
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /profiles/{username}:
+    get:
+      tags: [Profiles]
+      summary: Get profile
+      operationId: getProfile
+      parameters:
+        - $ref: '#/components/parameters/Username'
+      responses:
+        '200':
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /profiles/{username}/follow:
+    post:
+      tags: [Profiles]
+      summary: Follow profile
+      operationId: followProfile
+      security:
+        - TokenAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Username'
+      responses:
+        '200':
+          description: Followed profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+    delete:
+      tags: [Profiles]
+      summary: Unfollow profile
+      operationId: unfollowProfile
+      security:
+        - TokenAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Username'
+      responses:
+        '200':
+          description: Unfollowed profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /articles:
+    get:
+      tags: [Articles]
+      summary: List articles
+      operationId: listArticles
+      parameters:
+        - $ref: '#/components/parameters/TagQuery'
+        - $ref: '#/components/parameters/AuthorQuery'
+        - $ref: '#/components/parameters/FavoritedQuery'
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/OffsetQuery'
+      responses:
+        '200':
+          description: Article list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultipleArticlesResponse'
+    post:
+      tags: [Articles]
+      summary: Create article
+      operationId: createArticle
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewArticleRequest'
+      responses:
+        '201':
+          description: Created article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleArticleResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /articles/feed:
+    get:
+      tags: [Articles]
+      summary: Feed articles
+      operationId: feedArticles
+      security:
+        - TokenAuth: []
+      parameters:
+        - $ref: '#/components/parameters/LimitQuery'
+        - $ref: '#/components/parameters/OffsetQuery'
+      responses:
+        '200':
+          description: Article feed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultipleArticlesResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+  /articles/{slug}:
+    get:
+      tags: [Articles]
+      summary: Get article
+      operationId: getArticle
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleArticleResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags: [Articles]
+      summary: Update article
+      operationId: updateArticle
+      security:
+        - TokenAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateArticleRequest'
+      responses:
+        '200':
+          description: Updated article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleArticleResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags: [Articles]
+      summary: Delete article
+      operationId: deleteArticle
+      security:
+        - TokenAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Article deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /articles/{slug}/favorite:
+    post:
+      tags: [Articles]
+      summary: Favorite article
+      operationId: favoriteArticle
+      security:
+        - TokenAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Favorited article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleArticleResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+    delete:
+      tags: [Articles]
+      summary: Unfavorite article
+      operationId: unfavoriteArticle
+      security:
+        - TokenAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Unfavorited article
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleArticleResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /articles/{slug}/comments:
+    get:
+      tags: [Comments]
+      summary: Get comments for article
+      operationId: getArticleComments
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Comments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MultipleCommentsResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    post:
+      tags: [Comments]
+      summary: Add comment to article
+      operationId: addArticleComment
+      security:
+        - TokenAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewCommentRequest'
+      responses:
+        '200':
+          description: Created comment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleCommentResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /articles/{slug}/comments/{id}:
+    delete:
+      tags: [Comments]
+      summary: Delete comment from article
+      operationId: deleteArticleComment
+      security:
+        - TokenAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+        - $ref: '#/components/parameters/CommentId'
+      responses:
+        '200':
+          description: Comment deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /tags:
+    get:
+      tags: [Tags]
+      summary: Get tags
+      operationId: getTags
+      responses:
+        '200':
+          description: Tags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagsResponse'
+components:
+  securitySchemes:
+    TokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Use the exact value `Token <jwt>`.
+  parameters:
+    Username:
+      name: username
+      in: path
+      required: true
+      schema:
+        type: string
+      example: demo-user
+    Slug:
+      name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+      example: demo-article-slug
+    CommentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      example: 1001
+    TagQuery:
+      name: tag
+      in: query
+      required: false
+      schema:
+        type: string
+      example: angularjs
+    AuthorQuery:
+      name: author
+      in: query
+      required: false
+      schema:
+        type: string
+      example: demo-user
+    FavoritedQuery:
+      name: favorited
+      in: query
+      required: false
+      schema:
+        type: string
+      example: another-demo-user
+    LimitQuery:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 20
+      example: 20
+    OffsetQuery:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      example: 0
+  responses:
+    UnauthorizedError:
+      description: Missing, invalid, or expired token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+    ForbiddenError:
+      description: Authenticated user is not allowed to perform the operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+  schemas:
+    LoginUserRequest:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [email, password]
+          properties:
+            email:
+              type: string
+              format: email
+              example: user@example.test
+            password:
+              type: string
+              format: password
+              example: example-password
+    NewUserRequest:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [username, email, password]
+          properties:
+            username:
+              type: string
+              example: demo-user
+            email:
+              type: string
+              format: email
+              example: user@example.test
+            password:
+              type: string
+              format: password
+              example: example-password
+    UpdateUserRequest:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          properties:
+            email:
+              type: string
+              format: email
+              example: updated-user@example.test
+            username:
+              type: string
+              example: updated-demo-user
+            password:
+              type: string
+              format: password
+              example: updated-example-password
+            image:
+              type: string
+              nullable: true
+              example: https://example.test/avatar.png
+            bio:
+              type: string
+              nullable: true
+              example: Demo biography
+    UserResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+    User:
+      type: object
+      required: [email, token, username, bio, image]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.test
+        token:
+          type: string
+          description: "JWT returned by the API. Use as `Authorization: Token <jwt>`."
+          example: fake-jwt-token
+        username:
+          type: string
+          example: demo-user
+        bio:
+          type: string
+          nullable: true
+          example: Demo biography
+        image:
+          type: string
+          nullable: true
+          example: https://example.test/avatar.png
+    ProfileResponse:
+      type: object
+      required: [profile]
+      properties:
+        profile:
+          $ref: '#/components/schemas/Profile'
+    Profile:
+      type: object
+      required: [username, bio, image, following]
+      properties:
+        username:
+          type: string
+          example: demo-user
+        bio:
+          type: string
+          nullable: true
+          example: Demo biography
+        image:
+          type: string
+          nullable: true
+          example: https://example.test/avatar.png
+        following:
+          type: boolean
+          example: false
+    NewArticleRequest:
+      type: object
+      required: [article]
+      properties:
+        article:
+          type: object
+          required: [title, description, body]
+          properties:
+            title:
+              type: string
+              example: Demo article title
+            description:
+              type: string
+              example: Demo article description
+            body:
+              type: string
+              example: Demo article body
+            tagList:
+              type: array
+              items:
+                type: string
+              example: [angularjs, realworld]
+    UpdateArticleRequest:
+      type: object
+      required: [article]
+      properties:
+        article:
+          type: object
+          properties:
+            title:
+              type: string
+              example: Updated demo article title
+            description:
+              type: string
+              example: Updated demo article description
+            body:
+              type: string
+              example: Updated demo article body
+            tagList:
+              type: array
+              items:
+                type: string
+              example: [angularjs, updated]
+    SingleArticleResponse:
+      type: object
+      required: [article]
+      properties:
+        article:
+          $ref: '#/components/schemas/Article'
+    MultipleArticlesResponse:
+      type: object
+      required: [articles, articlesCount]
+      properties:
+        articles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Article'
+        articlesCount:
+          type: integer
+          example: 1
+    Article:
+      type: object
+      required:
+        - slug
+        - title
+        - description
+        - body
+        - tagList
+        - createdAt
+        - updatedAt
+        - favorited
+        - favoritesCount
+        - author
+      properties:
+        slug:
+          type: string
+          example: demo-article-slug
+        title:
+          type: string
+          example: Demo article title
+        description:
+          type: string
+          example: Demo article description
+        body:
+          type: string
+          example: Demo article body
+        tagList:
+          type: array
+          items:
+            type: string
+          example: [angularjs, realworld]
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-06-23T00:00:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-06-23T00:00:00.000Z'
+        favorited:
+          type: boolean
+          example: false
+        favoritesCount:
+          type: integer
+          example: 0
+        author:
+          $ref: '#/components/schemas/Profile'
+    NewCommentRequest:
+      type: object
+      required: [comment]
+      properties:
+        comment:
+          type: object
+          required: [body]
+          properties:
+            body:
+              type: string
+              example: Demo comment body
+    SingleCommentResponse:
+      type: object
+      required: [comment]
+      properties:
+        comment:
+          $ref: '#/components/schemas/Comment'
+    MultipleCommentsResponse:
+      type: object
+      required: [comments]
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+    Comment:
+      type: object
+      required: [id, createdAt, updatedAt, body, author]
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1001
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-06-23T00:00:00.000Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-06-23T00:00:00.000Z'
+        body:
+          type: string
+          example: Demo comment body
+        author:
+          $ref: '#/components/schemas/Profile'
+    TagsResponse:
+      type: object
+      required: [tags]
+      properties:
+        tags:
+          type: array
+          items:
+            type: string
+          example: [angularjs, realworld]
+    ErrorsResponse:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+          example:
+            body:
+              - validation failed
