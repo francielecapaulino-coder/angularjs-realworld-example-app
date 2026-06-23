@@ -1,6 +1,6 @@
 # PROGRESS — 001-fundacao
 
-State: EVALUATING
+State: READY
 
 ## Timeline
 | Data/hora | Papel | State | Evidência |
@@ -9,6 +9,7 @@ State: EVALUATING
 | 2026-06-23 16:58:57 -03 | builder | IMPLEMENTING | `.devcontainer/devcontainer.json`, `.git/info/exclude`, `.github/ISSUE_TEMPLATE/*`; gates locais PASS |
 | 2026-06-23 16:58:57 -03 | evaluator | EVALUATING | docs/agent/work/001-fundacao/REVIEW.md |
 | 2026-06-23 16:58:57 -03 | builder | EVALUATING | Branch `bleeding` enviada e PR #1 criado: https://github.com/francielecapaulino-coder/angularjs-realworld-example-app/pull/1 |
+| 2026-06-23 17:54:03 -03 | closer | READY | PR #1 mergeado; PLAN/PROGRESS/STATE/ROADMAP atualizados para encerramento |
 
 ## Decisões
 - Node 22 LTS escolhido para o devcontainer: compatível com Angular 21
@@ -36,8 +37,9 @@ State: EVALUATING
 | `node -e "const pkg=require('./package.json'); console.log(pkg.engines ? JSON.stringify(pkg.engines) : 'PASS engines_check: package.json sem engines conflitante')"` | PASS — `package.json` sem `engines` conflitante |
 | `git push -u origin bleeding` | PASS — branch `origin/bleeding` criada |
 | `gh pr create --base master --head bleeding` | PASS — PR #1 criado |
+| `gh pr merge 1 --squash` | PASS — PR #1 mergeado em `master` |
 
 ## Riscos residuais / pendências
 - `package.json` sem campo `engines`; informar time que ambiente local requer
   Node ≥ 20.19 a partir desta slice.
-- PR #1 aguarda revisão/merge humano.
+- Mudanças locais fora da slice ainda existem em `package.json` e `package-lock.json`.
