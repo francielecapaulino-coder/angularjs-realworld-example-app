@@ -134,4 +134,22 @@ describe('AuthService', () => {
     expect(auth.isAuthenticated()).toBe(false);
     expect(jwt.get()).toBeNull();
   });
+
+  it('update PUTs { user } to /user and re-stores the session with the new token', async () => {
+    const result = new Promise<User>((resolve) => {
+      auth
+        .update({ email: 'new@b.test', username: 'user-012', bio: 'hi', image: null })
+        .subscribe((user) => resolve(user));
+    });
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/user`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({
+      user: { email: 'new@b.test', username: 'user-012', bio: 'hi', image: null },
+    });
+    req.flush({ user: { ...MOCK_USER, username: 'user-012', token: 'fake-jwt-token-012' } });
+
+    await result;
+    expect(auth.currentUser()?.username).toBe('user-012');
+    expect(jwt.get()).toBe('fake-jwt-token-012');
+  });
 });

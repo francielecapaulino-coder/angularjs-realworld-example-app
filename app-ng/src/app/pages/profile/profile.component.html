@@ -1,0 +1,56 @@
+@if (profile(); as p) {
+  <div class="profile-page">
+
+    <div class="user-info">
+      <div class="container">
+        <div class="row">
+          <div class="col-xs-12 col-md-10 offset-md-1">
+            @if (p.image) {
+              <img [src]="p.image" class="user-img" alt="" />
+            }
+            <h4>{{ p.username }}</h4>
+            @if (p.bio) {
+              <p>{{ p.bio }}</p>
+            }
+
+            @if (isUser()) {
+              <a class="btn btn-sm btn-outline-secondary action-btn" routerLink="/settings">
+                <i class="ion-gear-a"></i> Edit Profile Settings
+              </a>
+            } @else {
+              <app-follow-button [user]="p"></app-follow-button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="row">
+        <div class="col-xs-12 col-md-10 offset-md-1">
+
+          <div class="articles-toggle">
+            <ul class="nav nav-pills outline-active">
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="tab() === 'my'"
+                  href="javascript:void(0)" (click)="selectTab('my')">
+                  My Articles
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="tab() === 'favorited'"
+                  href="javascript:void(0)" (click)="selectTab('favorited')">
+                  Favorited Articles
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <app-article-list [listConfig]="listConfig()"></app-article-list>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+}
