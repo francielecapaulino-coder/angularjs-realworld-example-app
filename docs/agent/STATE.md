@@ -1,16 +1,17 @@
 # STATE
 
-State: REVIEWING
+State: PLANNED
 Current phase: 2 — Rede de segurança
 Last completed phase: 1 — Fundação
-Active work unit: 003-contract-tests
+Active work unit: 004-e2e-playwright
 
 ## Briefing — o que o próximo agente faz primeiro
 1. Ler `docs/agent/OPERATING-GUIDE.md` e este `STATE.md`.
-2. Ler `docs/agent/work/003-contract-tests/REVIEW.md` — veredito PASS, aguardando revisão humana.
-3. Após revisão e merge, iniciar a próxima slice da Fase 2: **E2E Playwright** cobrindo
-   login/registro, listar/abrir artigo, criar artigo, favoritar, seguir usuário contra
-   o app AngularJS atual.
+2. Ler `docs/agent/work/004-e2e-playwright/PLAN.md`.
+3. Aguardar confirmação humana do plano (pending_decision ativo).
+4. Após aprovação: atuar como **builder** — instalar `@playwright/test@^1.44` e
+   `serve@^14`, criar `playwright.config.js` e `tests/e2e/conduit.e2e.test.js`,
+   adicionar scripts em `package.json`, rodar gates e registrar evidências.
 
 ## Não faça
 - Não inventar requisitos de produto.
