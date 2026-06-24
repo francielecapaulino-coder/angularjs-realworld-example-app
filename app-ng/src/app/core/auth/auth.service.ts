@@ -17,6 +17,16 @@ interface UserResponse {
   user: User;
 }
 
+/** Credentials submitted by the login/register forms. */
+export interface AuthCredentials {
+  username?: string;
+  email: string;
+  password: string;
+}
+
+/** Auth mode driven by the route. */
+export type AuthType = 'login' | 'register';
+
 /**
  * Signal-based session/auth state (mirrors legacy src/js/services/user.service.js).
  * Exposes the current user as a signal so layout/components react reactively —
@@ -38,6 +48,23 @@ export class AuthService {
   setAuth(user: User): void {
     this.jwt.save(user.token);
     this.currentUserSig.set(user);
+  }
+
+  /**
+   * Authenticates against the RealWorld API.
+   *  - login    → POST /users/login  { user: { email, password } }
+   *  - register → POST /users        { user: { username, email, password } }
+   * On success, stores the session via setAuth and emits the user.
+   * Mirrors legacy src/js/services/user.service.js#attemptAuth.
+   */
+  attemptAuth(type: AuthType, credentials: AuthCredentials): Observable<User> {
+    const route = type === 'login' ? '/users/login' : '/users';
+    return this.http
+      .post<UserResponse>(`${APP_CONSTANTS.apiBase}${route}`, { user: credentials })
+      .pipe(
+        tap((res) => this.setAuth(res.user)),
+        map((res) => res.user),
+      );
   }
 
   /** Clears the session (logout or invalid token). */
