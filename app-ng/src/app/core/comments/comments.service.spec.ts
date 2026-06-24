@@ -30,4 +30,19 @@ describe('CommentsService', () => {
     req.flush({ comments: [{ id: 1, body: 'hi' }] });
     expect((await result).length).toBe(1);
   });
+
+  it('add POSTs { comment: { body } } and unwraps the comment', () => {
+    service.add('a-1', 'Nice').subscribe();
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/articles/a-1/comments`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ comment: { body: 'Nice' } });
+    req.flush({ comment: { id: 2, body: 'Nice' } });
+  });
+
+  it('destroy DELETEs /articles/:slug/comments/:id', () => {
+    service.destroy('a-1', 5).subscribe();
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/articles/a-1/comments/5`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
+  });
 });

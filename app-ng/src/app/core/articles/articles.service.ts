@@ -40,4 +40,25 @@ export class ArticlesService {
       .get<SingleArticleResponse>(`${APP_CONSTANTS.apiBase}/articles/${slug}`)
       .pipe(map((res) => res.article));
   }
+
+  /** Favorites an article (POST /articles/:slug/favorite). */
+  favorite(slug: string): Observable<Article> {
+    return this.http
+      .post<SingleArticleResponse>(`${APP_CONSTANTS.apiBase}/articles/${slug}/favorite`, {})
+      .pipe(map((res) => res.article));
+  }
+
+  /** Unfavorites an article (DELETE /articles/:slug/favorite). */
+  unfavorite(slug: string): Observable<Article> {
+    return this.http
+      .delete<SingleArticleResponse>(`${APP_CONSTANTS.apiBase}/articles/${slug}/favorite`)
+      .pipe(map((res) => res.article));
+  }
+
+  /** Deletes an article (DELETE /articles/:slug). Author-only (enforced by API). */
+  delete(slug: string): Observable<void> {
+    return this.http
+      .delete<void>(`${APP_CONSTANTS.apiBase}/articles/${slug}`)
+      .pipe(map(() => undefined));
+  }
 }

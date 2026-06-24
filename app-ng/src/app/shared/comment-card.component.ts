@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Comment } from '../core/models/comment.model';
@@ -6,6 +6,7 @@ import { Comment } from '../core/models/comment.model';
 /**
  * A single comment card (mirrors legacy comment.html).
  * The comment body is rendered as TEXT (interpolation), never as HTML.
+ * Shows a delete control only when `canDelete` is true (own comment).
  */
 @Component({
   selector: 'app-comment-card',
@@ -27,10 +28,17 @@ import { Comment } from '../core/models/comment.model';
           {{ comment.author.username }}
         </a>
         <span class="date-posted">{{ comment.createdAt | date: 'longDate' }}</span>
+        @if (canDelete) {
+          <span class="mod-options">
+            <i class="ion-trash-a" (click)="delete.emit()"></i>
+          </span>
+        }
       </div>
     </div>
   `,
 })
 export class CommentCardComponent {
   @Input({ required: true }) comment!: Comment;
+  @Input() canDelete = false;
+  @Output() delete = new EventEmitter<void>();
 }
