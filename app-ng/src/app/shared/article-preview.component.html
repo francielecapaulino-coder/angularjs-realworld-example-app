@@ -12,13 +12,9 @@
       <span class="date">{{ article.createdAt | date: 'longDate' }}</span>
     </div>
 
-    <!-- Display-only favorite count (favoriting action added in a later slice). -->
-    <button class="btn btn-sm pull-xs-right"
-      [class.btn-primary]="article.favorited"
-      [class.btn-outline-primary]="!article.favorited"
-      type="button" disabled>
-      <i class="ion-heart"></i> {{ article.favoritesCount }}
-    </button>
+    <app-favorite-button class="pull-xs-right" [article]="article">
+      {{ article.favoritesCount }}
+    </app-favorite-button>
   </div>
 
   <a [routerLink]="['/article', article.slug]" class="preview-link">

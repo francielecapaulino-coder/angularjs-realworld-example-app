@@ -69,4 +69,25 @@ describe('ArticlesService', () => {
     req.flush({ article: { slug: 'a-1', title: 'T' } });
     expect((await result).slug).toBe('a-1');
   });
+
+  it('favorite POSTs to /articles/:slug/favorite', () => {
+    service.favorite('a-1').subscribe();
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/articles/a-1/favorite`);
+    expect(req.request.method).toBe('POST');
+    req.flush({ article: { slug: 'a-1', favorited: true, favoritesCount: 1 } });
+  });
+
+  it('unfavorite DELETEs /articles/:slug/favorite', () => {
+    service.unfavorite('a-1').subscribe();
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/articles/a-1/favorite`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush({ article: { slug: 'a-1', favorited: false, favoritesCount: 0 } });
+  });
+
+  it('delete DELETEs /articles/:slug', () => {
+    service.delete('a-1').subscribe();
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/articles/a-1`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
+  });
 });

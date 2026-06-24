@@ -1,0 +1,33 @@
+<div class="article-meta">
+  <a [routerLink]="['/profile', article.author.username]">
+    @if (article.author.image) {
+      <img [src]="article.author.image" alt="" />
+    }
+  </a>
+  <div class="info">
+    <a class="author" [routerLink]="['/profile', article.author.username]">
+      {{ article.author.username }}
+    </a>
+    <span class="date">{{ article.createdAt }}</span>
+  </div>
+
+  @if (canModify()) {
+    <span>
+      <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/editor', article.slug]">
+        <i class="ion-edit"></i> Edit Article
+      </a>
+      <button class="btn btn-sm btn-outline-danger" type="button" (click)="onDelete()">
+        <i class="ion-trash-a"></i> Delete Article
+      </button>
+    </span>
+  } @else {
+    <span>
+      <app-follow-button [user]="article.author"></app-follow-button>
+      &nbsp;
+      <app-favorite-button [article]="article">
+        {{ article.favorited ? 'Unfavorite' : 'Favorite' }} Article
+        <span class="counter">({{ article.favoritesCount }})</span>
+      </app-favorite-button>
+    </span>
+  }
+</div>

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -76,7 +76,7 @@ describe('ArticleComponent', () => {
     httpMock.verify();
   });
 
-  it('shows the (disabled) comment form for authenticated users', () => {
+  it('shows the comment form for authenticated users', () => {
     const { fixture, httpMock } = setup();
     TestBed.inject(AuthService).setAuth(MOCK_USER);
     fixture.detectChanges();
@@ -105,6 +105,51 @@ describe('ArticleComponent', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('Nice post');
     expect(text).toContain('reader');
+    httpMock.verify();
+  });
+
+  it('addComment POSTs and prepends the new comment', () => {
+    const { fixture, httpMock } = setup();
+    TestBed.inject(AuthService).setAuth(MOCK_USER);
+    fixture.detectChanges();
+    flush(httpMock);
+    fixture.detectChanges();
+
+    fixture.componentInstance.commentBody.set('My comment');
+    fixture.componentInstance.addComment();
+
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/articles/a-1/comments`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ comment: { body: 'My comment' } });
+    req.flush({
+      comment: {
+        id: 9,
+        body: 'My comment',
+        createdAt: '2026-06-24T00:00:00.000Z',
+        updatedAt: '2026-06-24T00:00:00.000Z',
+        author: { username: 'user-009', bio: null, image: null, following: false },
+      },
+    });
+
+    expect(fixture.componentInstance.comments()[0].id).toBe(9);
+    expect(fixture.componentInstance.commentBody()).toBe('');
+    httpMock.verify();
+  });
+
+  it('deleteArticle DELETEs and navigates home', () => {
+    const { fixture, httpMock } = setup();
+    const router = TestBed.inject(Router);
+    const navSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    fixture.detectChanges();
+    flush(httpMock);
+    fixture.detectChanges();
+
+    fixture.componentInstance.deleteArticle();
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/articles/a-1`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
+
+    expect(navSpy).toHaveBeenCalledWith(['/']);
     httpMock.verify();
   });
 });
