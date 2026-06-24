@@ -1,48 +1,48 @@
 # STATE
 
 State: REVIEWING
-Current phase: 4 — Corte/validação E2E
+Current phase: 4 — Corte/validação E2E → descomissionamento
 Last completed phase: 3 — Migração Angular 21 (todas as telas migradas)
-Active work unit: 013-e2e-migration
+Active work unit: 014-decommission-legacy
 
-## Decisões da Fase 3 (ADR-001 — aprovadas)
-- Signals; history API; SPA estático; marked + DomSanitizer. Coexistência em `app-ng/`.
+## Decisões da Fase 3/4 (ADR-001 — aprovadas)
+- Signals; history API; SPA estático; marked + DomSanitizer. app-ng é a aplicação oficial.
+- Legado AngularJS **arquivado** em `legacy/` (decisão do usuário — não apagado).
 
 ## Progresso
-- Fase 3 (005–012): COMPLETA e mergeada. Todas as telas principais migradas para Angular 21.
-- 013 (Fase 4) migração da suite E2E para o app-ng + **correção de corrida de sessão**:
-  build + 89 unit + 26 E2E verdes. Aguardando revisão humana do PR. `src/` legado intocado.
+- Fase 3 (005–012): COMPLETA e mergeada. Todas as telas migradas para Angular 21.
+- 013 (Fase 4) migração E2E p/ app-ng + correção de corrida de sessão: COMPLETA (mergeada).
+- 014 (Fase 4) descomissionamento: legado arquivado em `legacy/`; package.json/README/.gitignore
+  repontados p/ app-ng. Gates verdes (contract 11/11, unit 89/89, E2E 26/26). Aguardando revisão humana.
 
-## Correção relevante (013)
-- Restauração de sessão movida para `provideAppInitializer` + `withDisabledInitialNavigation`:
-  `verifyAuth()` resolve antes da navegação inicial → `authGuard` avalia com sessão restaurada.
-  Refresh em /editor e /settings não desloga mais; username aparece no nav sem reload.
+## MARCO
+- **Migração concluída**: app-ng (Angular 21) é a aplicação oficial; AngularJS arquivado em `legacy/`.
 
-## Telas/funcionalidades migradas
-- `/` (home/feed), `/login`, `/register`, `/article/:slug` (leitura + escrita),
-  `/editor` e `/editor/:slug` (authGuard), `/profile/:username` (abas), `/settings` (authGuard + logout).
-- E2E (Playwright) valida o app-ng com URLs limpas (26 testes, 10 suites).
+## Estrutura atual
+- `app-ng/` — aplicação oficial (Angular 21).
+- `legacy/` — app AngularJS 1.5 arquivado (não buildado/servido/testado).
+- `tests/contract/` — contract tests (API/OpenAPI). `tests/e2e/` — Playwright (serve o app-ng).
+- Scripts raiz: `build`/`serve`/`test:unit`/`test:contract`/`test:e2e` (+`pretest:e2e`) → app-ng.
 
 ## Invariantes preservadas
 - Interceptor `Authorization: Token <jwt>` só p/ `apiBase`; esquema `Token` (não `Bearer`).
 - Mutações exigem auth (botões → /register; rotas editor/settings → /login via guard, refresh-safe).
-- Markdown sanitizado (sem bypass). Logout limpa token. Update rotaciona token via setAuth.
+- Sessão restaurada antes da navegação inicial (APP_INITIALIZER). Markdown sanitizado (sem bypass).
 - Chave `localStorage['jwtToken']`; contrato RealWorld inalterado; tema claro inalterado.
-- Bug legado de `article-actions` corrigido (E2E baseline invertido).
 
 ## Briefing — o que o próximo agente faz primeiro
 1. Ler `OPERATING-GUIDE.md`, este `STATE.md`, `docs/adr/ADR-001-...md`.
-2. Rodar app-ng (Node >=20.19/22.12, `nvm use 22`): `cd app-ng && npm install && npm run build && CI=true npm test`.
-3. Rodar E2E: build do app-ng primeiro, depois `npm run test:e2e` (Playwright sobe `serve` apontando p/ app-ng).
-4. Próxima slice (Fase 4 — descomissionamento, Categoria C):
-   - Servir o app-ng como a aplicação oficial (raiz/deploy).
-   - Remover/arquivar o AngularJS legado em `src/`, o `gulpfile.js` e dependências legadas;
-     ajustar `package.json` (scripts), README e quaisquer configs de build legado.
-   - Validar que a suite E2E continua verde apontando para o app-ng após o corte.
+2. App oficial em `app-ng/` (Node >=20.19/22.12, `nvm use 22`):
+   `cd app-ng && npm install && npm run build && CI=true npm test`.
+3. Da raiz: `npm run test:contract` e `npm run test:e2e` (Playwright sobe `serve` apontando p/ app-ng).
+4. Trabalho remanescente (opcional / próximas fases):
+   - Pipeline de deploy/hosting do app-ng (infraestrutura).
+   - Limpeza dos comentários "mirrors legacy src/js/..." no app-ng (cosmético).
+   - Eventual remoção definitiva de `legacy/` quando não for mais necessário como referência.
 
 ## Não faça
-- Não inventar requisitos de produto.
-- Não reabrir os pontos de permissão já decididos (ver ADR-001) sem motivo novo.
+- Não reintroduzir o app legado no fluxo de build/serve/test.
+- Não reabrir os pontos já decididos (ver ADR-001) sem motivo novo.
 - Não usar `bypassSecurityTrustHtml` para conteúdo não confiável.
 - Não permitir acesso autenticado sem guard/checagem de sessão (refresh-safe).
 - Não escrever código de produto antes de uma unidade de trabalho ser planejada.

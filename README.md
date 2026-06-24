@@ -1,24 +1,58 @@
-# ![Angular 1.5+ ES6 & Component API Example App](project-logo.png)
+# ![Angular 21 Conduit Example App](project-logo.png)
 
-> Example Angular 1.5+ (ES6 + Components) codebase that adheres to the [RealWorld](https://github.com/gothinkster/realworld-example-apps) spec and API.
+> Example **Angular 21** (standalone components + Signals) codebase that adheres to the
+> [RealWorld](https://github.com/gothinkster/realworld-example-apps) spec and API.
 
-View the **[demo application](https://angularjs.realworld.io)** or **[learn how to build the application from scratch](https://thinkster.io/angularjs-es6-tutorial)**!
+This repository was migrated from the original AngularJS 1.5 app to **Angular 21**.
+The official application now lives in **[`app-ng/`](app-ng/)**. The original AngularJS
+app is archived under **[`legacy/`](legacy/README.md)** for historical reference and is
+no longer built, served, or tested.
 
 # Getting started
 
-1. Clone repo
-2. `npm install`
-3. `gulp`
+Requires Node **>= 20.19 / 22.12** (Angular 21).
 
-Make sure you have gulp installed globally (`npm install -g gulp`)
+```bash
+# 1. Install the Angular app dependencies
+cd app-ng && npm install
+
+# 2. Run it in dev mode
+npm start            # ng serve (http://localhost:4200)
+
+# 3. Production build (outputs app-ng/dist/app-ng/browser)
+npm run build
+```
+
+From the repository root you can also:
+
+```bash
+npm run build        # builds the Angular app (delegates to app-ng)
+npm run serve        # serves the built SPA on http://localhost:4100
+```
+
+# Testing
+
+```bash
+# Unit tests (Vitest, inside app-ng)
+npm run test:unit
+
+# Contract tests (validate the RealWorld API / OpenAPI spec)
+npm run test:contract
+
+# End-to-end tests (Playwright; builds the app then serves it on :4100)
+npm run test:e2e
+```
 
 ### Making requests to the backend API
 
-For convenience, we have a live API server running at https://conduit.productionready.io/api for the application to make requests against. You can view [the API spec here](https://github.com/GoThinkster/productionready/blob/master/api) which contains all routes & responses for the server.
+For convenience, there is a live API server at https://conduit.productionready.io/api
+for the application to make requests against. You can view
+[the API spec](https://github.com/GoThinkster/productionready/blob/master/api), which
+contains all routes & responses for the server. The source code for the backend server
+(Node, Rails, Django) is in the [main RealWorld repo](https://github.com/gothinkster/realworld).
 
-The source code for the backend server (available for Node, Rails and Django) can be found in the [main RealWorld repo](https://github.com/gothinkster/realworld).
-
-If you want to change the API URL to a local server, simply edit `src/js/config/app.constants.js` and change `api` to the local server's URL (i.e. `localhost:3000/api`)
+To point the app at a different API, edit `app-ng/src/app/core/config/app.constants.ts`
+and change `apiBase` (e.g. `http://localhost:3000/api`).
 
 <br />
 

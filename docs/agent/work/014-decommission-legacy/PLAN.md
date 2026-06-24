@@ -11,8 +11,11 @@ para o `app-ng`; atualizar o README. As redes de segurança (contract, unit, E2E
 permanecem verdes como gate do corte.
 
 ## Escopo
+- Decisão do usuário: **ARQUIVAR** o legado (mover para `legacy/`) em vez de apagar.
 - Incluído:
-  - **Remover** o app AngularJS legado: diretório `src/` (66 arquivos) e `gulpfile.js`.
+  - **Arquivar** o app AngularJS legado: mover `src/` → `legacy/src/` e `gulpfile.js`
+    → `legacy/gulpfile.js` (via `git mv`, preservando histórico). Adicionar `legacy/README.md`
+    explicando que o conteúdo está desativado (apenas referência histórica).
   - `package.json` (raiz):
     - Remover deps legadas: `angular`, `angular-ui-router`, `babel-preset-es2015`,
       `babelify`, `browserify`, `browserify-ngannotate`, `gulp*`, `vinyl-source-stream`,
@@ -30,7 +33,8 @@ permanecem verdes como gate do corte.
   - Alterar o contrato OpenAPI ou os contract tests (apenas mantê-los verdes).
   - Pipeline de deploy/hosting real (fica para infraestrutura, se aplicável).
 - files_owned:
-  - `src/**` (remover), `gulpfile.js` (remover)
+  - `src/**` → `legacy/src/**` (mover), `gulpfile.js` → `legacy/gulpfile.js` (mover)
+  - `legacy/README.md` (novo — aviso de arquivamento)
   - `package.json` (raiz), `README.md`
   - `docs/agent/work/014-decommission-legacy/{PLAN,PROGRESS,REVIEW}.md`
   - `docs/agent/STATE.md`

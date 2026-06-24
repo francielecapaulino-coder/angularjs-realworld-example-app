@@ -1,35 +1,19 @@
 {
-  "name": "conduit-angularjs",
-  "version": "1.0.0",
-  "description": "Angular frontend for Conduit",
+  "name": "conduit-angular",
+  "version": "2.0.0",
+  "description": "Angular 21 frontend for Conduit (RealWorld). The official app lives in app-ng/; the original AngularJS app is archived under legacy/.",
   "author": "Thinkster",
   "license": "MIT",
   "scripts": {
-    "build": "node_modules/.bin/gulp html browserify",
-    "serve:build": "node_modules/.bin/serve -s build -l 4100 --no-clipboard",
+    "build": "cd app-ng && npm ci && npm run build",
+    "serve": "serve -s app-ng/dist/app-ng/browser -l 4100 --no-clipboard",
+    "test:unit": "cd app-ng && CI=true npm test",
     "test:contract": "jest tests/contract/ --testTimeout=15000",
+    "pretest:e2e": "npm run build",
     "test:e2e": "npx playwright test"
-  },
-  "dependencies": {
-    "angular": "^1.5.0-rc.2",
-    "angular-ui-router": "^0.4.2",
-    "babel-preset-es2015": "^6.3.13",
-    "babelify": "^7.2.0",
-    "browserify": "^13.0.0",
-    "browserify-ngannotate": "^2.0.0",
-    "gulp": "^3.9.1",
-    "gulp-angular-templatecache": "^1.8.0",
-    "gulp-notify": "^2.2.0",
-    "gulp-rename": "^1.2.2",
-    "gulp-uglify": "^1.5.3",
-    "gulp-util": "^3.0.7",
-    "marked": "^0.3.5",
-    "merge-stream": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",
-    "browser-sync": "2.18.13",
     "jest": "^27.5.1",
     "js-yaml": "^3.14.2",
     "serve": "^14.2.6"
