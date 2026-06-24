@@ -88,4 +88,50 @@ describe('AuthService', () => {
     expect(auth.isAuthenticated()).toBe(false);
     expect(jwt.get()).toBeNull();
   });
+
+  it('attemptAuth login POSTs to /users/login and stores the session', async () => {
+    const result = new Promise<void>((resolve) => {
+      auth.attemptAuth('login', { email: 'a@b.test', password: 'pw-not-real-007' })
+        .subscribe(() => resolve());
+    });
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/users/login`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ user: { email: 'a@b.test', password: 'pw-not-real-007' } });
+    req.flush({ user: MOCK_USER });
+    await result;
+    expect(auth.isAuthenticated()).toBe(true);
+    expect(jwt.get()).toBe(FAKE_TOKEN);
+  });
+
+  it('attemptAuth register POSTs to /users (not /users/login)', async () => {
+    const result = new Promise<void>((resolve) => {
+      auth.attemptAuth('register', { username: 'u', email: 'a@b.test', password: 'pw-not-real-007' })
+        .subscribe(() => resolve());
+    });
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/users`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      user: { username: 'u', email: 'a@b.test', password: 'pw-not-real-007' },
+    });
+    req.flush({ user: MOCK_USER });
+    await result;
+    expect(auth.isAuthenticated()).toBe(true);
+  });
+
+  it('attemptAuth does NOT store a session on a 422 error', async () => {
+    const result = new Promise<unknown>((resolve) => {
+      auth.attemptAuth('login', { email: 'a@b.test', password: 'wrong' }).subscribe({
+        next: () => resolve('ok'),
+        error: (e) => resolve(e),
+      });
+    });
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/users/login`);
+    req.flush(
+      { errors: { 'email or password': ['is invalid'] } },
+      { status: 422, statusText: 'Unprocessable Entity' },
+    );
+    await result;
+    expect(auth.isAuthenticated()).toBe(false);
+    expect(jwt.get()).toBeNull();
+  });
 });
