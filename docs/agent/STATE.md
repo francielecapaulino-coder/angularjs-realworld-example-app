@@ -1,14 +1,16 @@
 # STATE
 
-State: READY
+State: REVIEWING
 Current phase: 2 — Rede de segurança
 Last completed phase: 1 — Fundação
-Active work unit: none
+Active work unit: 003-contract-tests
 
 ## Briefing — o que o próximo agente faz primeiro
 1. Ler `docs/agent/OPERATING-GUIDE.md` e este `STATE.md`.
-2. Aguardar revisão humana do PR da slice `002-realworld-openapi` antes de merge, por Categoria C.
-3. Após merge, iniciar a próxima slice da Fase 2 via Prompt 01: implementar testes de contrato contra `docs/api/realworld-openapi.yaml` e a API `conduit.productionready.io`.
+2. Ler `docs/agent/work/003-contract-tests/REVIEW.md` — veredito PASS, aguardando revisão humana.
+3. Após revisão e merge, iniciar a próxima slice da Fase 2: **E2E Playwright** cobrindo
+   login/registro, listar/abrir artigo, criar artigo, favoritar, seguir usuário contra
+   o app AngularJS atual.
 
 ## Não faça
 - Não inventar requisitos de produto.
