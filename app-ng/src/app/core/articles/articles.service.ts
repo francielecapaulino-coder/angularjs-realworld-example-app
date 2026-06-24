@@ -8,6 +8,14 @@ interface SingleArticleResponse {
   article: Article;
 }
 
+/** Editable fields sent when creating/updating an article. */
+export interface ArticleInput {
+  title: string;
+  description: string;
+  body: string;
+  tagList: string[];
+}
+
 /**
  * Articles API (mirrors legacy src/js/services/articles.service.js).
  */
@@ -60,5 +68,19 @@ export class ArticlesService {
     return this.http
       .delete<void>(`${APP_CONSTANTS.apiBase}/articles/${slug}`)
       .pipe(map(() => undefined));
+  }
+
+  /** Creates an article (POST /articles). */
+  create(article: ArticleInput): Observable<Article> {
+    return this.http
+      .post<SingleArticleResponse>(`${APP_CONSTANTS.apiBase}/articles`, { article })
+      .pipe(map((res) => res.article));
+  }
+
+  /** Updates an article (PUT /articles/:slug). Author-only (enforced by API). */
+  update(slug: string, article: ArticleInput): Observable<Article> {
+    return this.http
+      .put<SingleArticleResponse>(`${APP_CONSTANTS.apiBase}/articles/${slug}`, { article })
+      .pipe(map((res) => res.article));
   }
 }

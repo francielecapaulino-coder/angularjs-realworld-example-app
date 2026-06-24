@@ -90,4 +90,22 @@ describe('ArticlesService', () => {
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });
+
+  it('create POSTs { article } to /articles', () => {
+    const input = { title: 'T', description: 'D', body: 'B', tagList: ['x'] };
+    service.create(input).subscribe();
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/articles`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ article: input });
+    req.flush({ article: { slug: 't', ...input } });
+  });
+
+  it('update PUTs { article } to /articles/:slug', () => {
+    const input = { title: 'T2', description: 'D', body: 'B', tagList: [] };
+    service.update('a-1', input).subscribe();
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/articles/a-1`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ article: input });
+    req.flush({ article: { slug: 'a-1', ...input } });
+  });
 });

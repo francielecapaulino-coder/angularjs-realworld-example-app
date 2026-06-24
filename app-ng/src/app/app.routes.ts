@@ -3,6 +3,8 @@ import { PlaceholderComponent } from './pages/placeholder.component';
 import { AuthComponent } from './pages/auth/auth.component';
 import { HomeComponent } from './pages/home/home.component';
 import { ArticleComponent } from './pages/article/article.component';
+import { EditorComponent } from './pages/editor/editor.component';
+import { authGuard } from './core/auth/auth.guard';
 
 /**
  * Clean-URL routes (history API, per ADR-001). Remaining targets are placeholders;
@@ -14,8 +16,8 @@ export const routes: Routes = [
   { path: 'login', component: AuthComponent, data: { authType: 'login' } },
   { path: 'register', component: AuthComponent, data: { authType: 'register' } },
   { path: 'article/:slug', component: ArticleComponent },
-  { path: 'editor', component: PlaceholderComponent, data: { name: 'New Article' } },
-  { path: 'editor/:slug', component: PlaceholderComponent, data: { name: 'Edit Article' } },
+  { path: 'editor', component: EditorComponent, canActivate: [authGuard] },
+  { path: 'editor/:slug', component: EditorComponent, canActivate: [authGuard] },
   { path: 'profile/:username', component: PlaceholderComponent, data: { name: 'Profile' } },
   { path: 'settings', component: PlaceholderComponent, data: { name: 'Settings' } },
   { path: '**', redirectTo: '' },
