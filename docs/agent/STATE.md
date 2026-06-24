@@ -7,8 +7,8 @@ Active work unit: none
 
 ## Briefing — o que o próximo agente faz primeiro
 1. Ler `docs/agent/OPERATING-GUIDE.md` e este `STATE.md`.
-2. Ler `docs/agent/context/CHARTER.md`, `ROADMAP.md` e `SOURCES.md`.
-3. Iniciar a primeira slice da Fase 2 via Prompt 01 — Planejar & Triar: documentar o contrato RealWorld consumido em OpenAPI 3 ou criar a base de E2E Playwright contra o app AngularJS atual.
+2. Aguardar revisão humana do PR da slice `002-realworld-openapi` antes de merge, por Categoria C.
+3. Após merge, iniciar a próxima slice da Fase 2 via Prompt 01: implementar testes de contrato contra `docs/api/realworld-openapi.yaml` e a API `conduit.productionready.io`.
 
 ## Não faça
 - Não inventar requisitos de produto.

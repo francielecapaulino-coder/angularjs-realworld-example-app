@@ -54,13 +54,13 @@ verificável, antes de qualquer reescrita.
 - Testes de mutação (Fase 5).
 
 **Critérios de aceite:**
-- [ ] Arquivo OpenAPI 3 (`openapi.yaml` ou equivalente) gerado e revisado.
+- [x] Arquivo OpenAPI 3 (`docs/api/realworld-openapi.yaml`) gerado e revisado.
 - [ ] Testes de contrato verdes contra a API `conduit.productionready.io`.
 - [ ] E2E Playwright cobrindo os fluxos principais verdes.
 - [ ] Branch `failing-e2e` (teste quebrando) e branch `passing-e2e`
       (teste passando) existem e demonstram a rede.
 
-**Status atual:** `EMPTY`
+**Status atual:** `IN_PROGRESS`
 
 ---
 
