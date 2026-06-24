@@ -27,6 +27,15 @@ export interface AuthCredentials {
 /** Auth mode driven by the route. */
 export type AuthType = 'login' | 'register';
 
+/** Editable account fields submitted by the settings form. */
+export interface UserUpdate {
+  email: string;
+  username: string;
+  bio: string | null;
+  image: string | null;
+  password?: string;
+}
+
 /**
  * Signal-based session/auth state (mirrors legacy src/js/services/user.service.js).
  * Exposes the current user as a signal so layout/components react reactively —
@@ -71,6 +80,19 @@ export class AuthService {
   purgeAuth(): void {
     this.jwt.destroy();
     this.currentUserSig.set(null);
+  }
+
+  /**
+   * Updates the current account (PUT /user). The response carries a fresh token,
+   * so we re-store the session via setAuth. Mirrors legacy User.update.
+   */
+  update(user: UserUpdate): Observable<User> {
+    return this.http
+      .put<UserResponse>(`${APP_CONSTANTS.apiBase}/user`, { user })
+      .pipe(
+        tap((res) => this.setAuth(res.user)),
+        map((res) => res.user),
+      );
   }
 
   /**
