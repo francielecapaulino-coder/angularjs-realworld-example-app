@@ -55,12 +55,13 @@ verificável, antes de qualquer reescrita.
 
 **Critérios de aceite:**
 - [x] Arquivo OpenAPI 3 (`docs/api/realworld-openapi.yaml`) gerado e revisado.
-- [ ] Testes de contrato verdes contra a API `conduit.productionready.io`.
-- [ ] E2E Playwright cobrindo os fluxos principais verdes.
-- [ ] Branch `failing-e2e` (teste quebrando) e branch `passing-e2e`
+- [x] Testes de contrato verdes (slice 003; endpoint substituto
+      `node-express-conduit.appspot.com` por indisponibilidade da API original).
+- [x] E2E Playwright cobrindo os fluxos principais verdes (slice 004; 18 testes).
+- [x] Branch `failing-e2e` (teste quebrando) e branch `passing-e2e`
       (teste passando) existem e demonstram a rede.
 
-**Status atual:** `IN_PROGRESS`
+**Status atual:** `COMPLETE` (pendente revisão humana do PR da slice 004)
 
 ---
 

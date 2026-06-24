@@ -1,0 +1,462 @@
+'use strict';
+
+/**
+ * E2E tests — Conduit AngularJS (Fase 2 — Rede de segurança)
+ *
+ * All HTTP calls to conduit.productionready.io are intercepted via page.route()
+ * and return controlled mock responses. No real credentials, no real API calls.
+ *
+ * Fictitious data used throughout:
+ *   - token: "fake-jwt-token-e2e-test-only"
+ *   - user:  test-e2e@example.test / e2e-user / e2epassword-not-real
+ *
+ * App routing: hashbang (/#/route), served from ./build on port 4100.
+ */
+
+// @ts-check
+const { test, expect } = require('@playwright/test');
+
+// ---------------------------------------------------------------------------
+// Mock fixtures
+// ---------------------------------------------------------------------------
+
+const FAKE_TOKEN = 'fake-jwt-token-e2e-test-only';
+
+const MOCK_USER = {
+  email: 'test-e2e@example.test',
+  username: 'e2e-user',
+  bio: 'E2E test account — fictitious',
+  image: 'https://api.realworld.io/images/demo-avatar.png',
+  token: FAKE_TOKEN,
+};
+
+const MOCK_ARTICLES = [
+  {
+    slug: 'e2e-test-article-001',
+    title: 'E2E Test Article',
+    description: 'An article created for E2E testing purposes.',
+    body: 'This is the full body of the E2E test article.',
+    tagList: ['e2e', 'testing'],
+    createdAt: '2026-06-24T00:00:00.000Z',
+    updatedAt: '2026-06-24T00:00:00.000Z',
+    favorited: false,
+    favoritesCount: 3,
+    author: {
+      username: 'demo-author',
+      bio: null,
+      image: 'https://api.realworld.io/images/demo-avatar.png',
+      following: false,
+    },
+  },
+];
+
+const MOCK_TAGS = ['e2e', 'testing', 'playwright', 'angularjs'];
+
+const MOCK_PROFILE = {
+  username: 'demo-author',
+  bio: 'Demo author for E2E tests',
+  image: 'https://api.realworld.io/images/demo-avatar.png',
+  following: false,
+};
+
+const MOCK_COMMENTS = [
+  {
+    id: 1,
+    createdAt: '2026-06-24T00:00:00.000Z',
+    updatedAt: '2026-06-24T00:00:00.000Z',
+    body: 'An E2E test comment.',
+    author: {
+      username: 'demo-author',
+      bio: null,
+      image: 'https://api.realworld.io/images/demo-avatar.png',
+      following: false,
+    },
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Helper: intercept all calls to the RealWorld API
+// ---------------------------------------------------------------------------
+
+/**
+ * Sets up route intercepts for all API endpoints used by the app.
+ * Must be called before navigating to any page.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+async function setupApiMocks(page) {
+  const API_PATTERN = '**/conduit.productionready.io/api/**';
+
+  await page.route(API_PATTERN, async (route) => {
+    const url = route.request().url();
+    const method = route.request().method();
+
+    // GET /tags
+    if (method === 'GET' && url.includes('/tags')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ tags: MOCK_TAGS }),
+      });
+    }
+
+    // GET /articles/feed
+    if (method === 'GET' && url.includes('/articles/feed')) {
+      const authHeader = route.request().headers()['authorization'] || '';
+      if (!authHeader.startsWith('Token ')) {
+        return route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ errors: { message: 'Unauthorized' } }) });
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }),
+      });
+    }
+
+    // GET /articles/{slug}/comments
+    if (method === 'GET' && url.match(/\/articles\/[^/]+\/comments/)) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ comments: MOCK_COMMENTS }),
+      });
+    }
+
+    // POST /articles/{slug}/favorite
+    if (method === 'POST' && url.match(/\/articles\/[^/]+\/favorite/)) {
+      const favorited = Object.assign({}, MOCK_ARTICLES[0], { favorited: true, favoritesCount: 4 });
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ article: favorited }),
+      });
+    }
+
+    // GET /articles/{slug}  (specific article — must come AFTER feed & comments checks)
+    if (method === 'GET' && url.match(/\/articles\/[^/]+$/) && !url.includes('/feed')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ article: MOCK_ARTICLES[0] }),
+      });
+    }
+
+    // POST /articles  (create)
+    if (method === 'POST' && url.endsWith('/articles')) {
+      const newArticle = Object.assign({}, MOCK_ARTICLES[0], {
+        slug: 'new-e2e-article-' + Date.now(),
+        title: 'New E2E Article',
+        description: 'Created during E2E test',
+      });
+      return route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ article: newArticle }),
+      });
+    }
+
+    // GET /articles  (list)
+    if (method === 'GET' && url.includes('/articles')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }),
+      });
+    }
+
+    // GET /user  (current user)
+    if (method === 'GET' && url.endsWith('/user')) {
+      const authHeader = route.request().headers()['authorization'] || '';
+      if (!authHeader.startsWith('Token ')) {
+        return route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ errors: { message: 'Unauthorized' } }) });
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: MOCK_USER }),
+      });
+    }
+
+    // POST /users/login
+    if (method === 'POST' && url.endsWith('/users/login')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: MOCK_USER }),
+      });
+    }
+
+    // POST /users  (register)
+    if (method === 'POST' && url.endsWith('/users')) {
+      return route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ user: MOCK_USER }),
+      });
+    }
+
+    // GET /profiles/{username}
+    if (method === 'GET' && url.includes('/profiles/')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ profile: MOCK_PROFILE }),
+      });
+    }
+
+    // POST /profiles/{username}/follow
+    if (method === 'POST' && url.includes('/follow')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ profile: Object.assign({}, MOCK_PROFILE, { following: true }) }),
+      });
+    }
+
+    // Fallback: pass through or return 404
+    return route.fulfill({ status: 404, body: '' });
+  });
+}
+
+/**
+ * Registers an init script that sets the fictitious JWT token in localStorage
+ * BEFORE any page script runs, so the AngularJS app boots already authenticated.
+ * This is the reliable way to simulate a logged-in session for direct navigation.
+ *
+ * @param {import('@playwright/test').Page} page
+ */
+async function injectFakeTokenBeforeLoad(page) {
+  await page.addInitScript((token) => {
+    try {
+      localStorage.setItem('jwtToken', token);
+    } catch (_) { /* localStorage unavailable before first load — ignored */ }
+  }, FAKE_TOKEN);
+}
+
+// ---------------------------------------------------------------------------
+// Suite 1 — Home page (unauthenticated)
+// ---------------------------------------------------------------------------
+
+test.describe('Home page — unauthenticated', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+  });
+
+  test('loads home page and shows global feed tab', async ({ page }) => {
+    await page.goto('/#!/');
+    await expect(page.locator('.home-page')).toBeVisible();
+  });
+
+  test('displays article previews from global feed', async ({ page }) => {
+    await page.goto('/#!/');
+    await expect(page.locator('.article-preview').first()).toBeVisible();
+    await expect(page.locator('.preview-link').first()).toBeVisible();
+  });
+
+  test('displays article title in preview', async ({ page }) => {
+    await page.goto('/#!/');
+    await expect(page.locator('.article-preview h1').first()).toContainText('E2E Test Article');
+  });
+
+  test('shows Sign In and Sign Up links when not authenticated', async ({ page }) => {
+    await page.goto('/#!/');
+    await expect(page.locator('a[ui-sref="app.login"]')).toBeVisible();
+    await expect(page.locator('a[ui-sref="app.register"]')).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 2 — Login flow
+// ---------------------------------------------------------------------------
+
+test.describe('Login flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+  });
+
+  test('login page renders form with email and password fields', async ({ page }) => {
+    await page.goto('/#!/login');
+    await expect(page.locator('input[placeholder="Email"]')).toBeVisible();
+    await expect(page.locator('input[placeholder="Password"]')).toBeVisible();
+    await expect(page.locator('button.btn-primary')).toBeVisible();
+  });
+
+  test('submit login form stores token and navigates to home', async ({ page }) => {
+    await page.goto('/#!/login');
+    await page.fill('input[placeholder="Email"]', 'test-e2e@example.test');
+    await page.fill('input[placeholder="Password"]', 'e2epassword-not-real');
+    await page.click('button.btn-primary');
+    // After login, the app navigates to home and stores the JWT token.
+    // NOTE: the legacy header has a broken $scope.$watch('User.current') so the
+    // username only appears in nav after a reload — current behavior captured here.
+    await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
+    const storedToken = await page.evaluate(() => localStorage.getItem('jwtToken'));
+    expect(storedToken).toBe(FAKE_TOKEN);
+  });
+
+  test('username appears in nav after reload following login', async ({ page }) => {
+    await page.goto('/#!/login');
+    await page.fill('input[placeholder="Email"]', 'test-e2e@example.test');
+    await page.fill('input[placeholder="Password"]', 'e2epassword-not-real');
+    await page.click('button.btn-primary');
+    await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
+    // A reload re-runs verifyAuth, which populates the nav with the username.
+    await page.reload();
+    await expect(page.locator('nav.navbar')).toContainText('e2e-user', { timeout: 10000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 3 — Register flow
+// ---------------------------------------------------------------------------
+
+test.describe('Register flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+  });
+
+  test('register page renders form with username, email and password fields', async ({ page }) => {
+    await page.goto('/#!/register');
+    await expect(page.locator('input[placeholder="Username"]')).toBeVisible();
+    await expect(page.locator('input[placeholder="Email"]')).toBeVisible();
+    await expect(page.locator('input[placeholder="Password"]')).toBeVisible();
+  });
+
+  test('submit register form navigates to home', async ({ page }) => {
+    await page.goto('/#!/register');
+    await page.fill('input[placeholder="Username"]', 'e2e-user');
+    await page.fill('input[placeholder="Email"]', 'test-e2e@example.test');
+    await page.fill('input[placeholder="Password"]', 'e2epassword-not-real');
+    await page.click('button.btn-primary');
+    await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 4 — Article detail
+// ---------------------------------------------------------------------------
+
+test.describe('Article detail', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+  });
+
+  test('clicking an article preview navigates to article page', async ({ page }) => {
+    await page.goto('/#!/');
+    await page.locator('.preview-link').first().click();
+    await expect(page.locator('.article-page')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('article page shows title and author', async ({ page }) => {
+    await page.goto('/#!/article/e2e-test-article-001');
+    await expect(page.locator('.article-page')).toBeVisible();
+    await expect(page.locator('.article-page')).toContainText('E2E Test Article');
+    await expect(page.locator('.article-page')).toContainText('demo-author');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 5 — Create article (authenticated)
+// ---------------------------------------------------------------------------
+
+test.describe('Create article — authenticated', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    // Set the JWT token before any page script runs, so the app boots authenticated.
+    await injectFakeTokenBeforeLoad(page);
+  });
+
+  // NOTE: the editor route is '/editor/:slug'. A new article uses an empty slug,
+  // so the URL must end with a trailing slash: '/#!/editor/'.
+  test('editor page renders article form fields', async ({ page }) => {
+    await page.goto('/#!/editor/');
+    await expect(page.locator('input[placeholder="Article Title"]')).toBeVisible();
+    await expect(page.locator('button[ng-click="$ctrl.submit()"]')).toBeVisible();
+  });
+
+  test('filling and submitting the editor form navigates to the article page', async ({ page }) => {
+    await page.goto('/#!/editor/');
+    await page.fill('input[placeholder="Article Title"]', 'New E2E Article');
+    await page.fill('input[placeholder="What\'s this article about?"]', 'E2E description');
+    await page.fill('textarea[placeholder="Write your article (in markdown)"]', 'Article body content.');
+    await page.click('button[ng-click="$ctrl.submit()"]');
+    // After publish, the app redirects to the new article page
+    await expect(page.locator('.article-page')).toBeVisible({ timeout: 10000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 6 — Favorite article (authenticated)
+//
+// Favoriting is exercised on the home article preview, which renders the
+// favorite-btn via article-meta. (The article-page article-actions component
+// has a legacy constructor bug that crashes when authenticated — see PROGRESS.md.)
+// ---------------------------------------------------------------------------
+
+test.describe('Favorite article — authenticated', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    await injectFakeTokenBeforeLoad(page);
+  });
+
+  test('favorite button is visible on article preview', async ({ page }) => {
+    await page.goto('/#!/');
+    await expect(page.locator('favorite-btn button.btn-sm').first()).toBeVisible();
+  });
+
+  test('clicking favorite on preview toggles to btn-primary (favorited)', async ({ page }) => {
+    await page.goto('/#!/');
+    const favoriteBtn = page.locator('favorite-btn button.btn-sm').first();
+    await expect(favoriteBtn).toBeVisible();
+    await expect(favoriteBtn).toHaveClass(/btn-outline-primary/);
+    await favoriteBtn.click();
+    // After click with mock response (favorited: true), button becomes btn-primary
+    await expect(favoriteBtn).toHaveClass(/btn-primary/, { timeout: 5000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 7 — Follow user
+//
+// The follow-btn renders inside the article-actions component, which only works
+// for anonymous visitors (the authenticated path crashes — legacy bug captured
+// in PROGRESS.md). The follow CTA is therefore verified for an anonymous user.
+// ---------------------------------------------------------------------------
+
+test.describe('Follow user — anonymous', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+  });
+
+  test('follow button is visible on article page for an anonymous visitor', async ({ page }) => {
+    await page.goto('/#!/article/e2e-test-article-001');
+    await expect(page.locator('follow-btn button.action-btn').first()).toBeVisible();
+  });
+
+  test('favorite button is also visible on the article page for an anonymous visitor', async ({ page }) => {
+    await page.goto('/#!/article/e2e-test-article-001');
+    await expect(page.locator('favorite-btn button.btn-sm').first()).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 8 — Legacy behavior baseline: authenticated article-actions bug
+//
+// Documents that the article-actions component crashes when an authenticated
+// user opens an article (constructor reads `this.article` before $onInit).
+// If the Angular 21 migration fixes this, the assertion below must be updated.
+// ---------------------------------------------------------------------------
+
+test.describe('Legacy baseline — authenticated article-actions', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    await injectFakeTokenBeforeLoad(page);
+  });
+
+  test('article-actions buttons do not render when authenticated (legacy bug)', async ({ page }) => {
+    await page.goto('/#!/article/e2e-test-article-001');
+    await expect(page.locator('.article-page')).toBeVisible({ timeout: 10000 });
+    // The transcluded follow/favorite buttons fail to render due to the bug.
+    await expect(page.locator('.article-page follow-btn button.action-btn')).toHaveCount(0);
+  });
+});
