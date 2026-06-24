@@ -511,3 +511,36 @@ test.describe('Settings — authenticated', () => {
     expect(storedToken).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Suite 12 — verifyAuth failure during bootstrap
+//
+// If session restore (GET /user) fails (e.g. expired token or a network error),
+// the app must end up logged out and route guards must redirect cleanly to /login
+// for protected routes — never hang on the loading spinner.
+// ---------------------------------------------------------------------------
+
+test.describe('verifyAuth failure on bootstrap', () => {
+  test('network error on GET /user during a guarded-route visit redirects to /login', async ({ page }) => {
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      if (route.request().method() === 'GET' && url.endsWith('/user')) {
+        return route.abort('failed'); // simulated network failure during session restore
+      }
+      if (url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }) });
+    });
+
+    // Boot with a (now invalid) token, navigating straight to a guarded route.
+    await injectFakeTokenBeforeLoad(page);
+    await page.goto('/settings');
+
+    // verifyAuth fails -> session purged -> guard redirects to /login (no hang).
+    await expect(page).toHaveURL(/\/login$/, { timeout: 10000 });
+    await expect(page.locator('input[placeholder="Email"]')).toBeVisible();
+    const storedToken = await page.evaluate(() => localStorage.getItem('jwtToken'));
+    expect(storedToken).toBeNull(); // token cleared on failed restore
+  });
+});
