@@ -4,14 +4,15 @@
 const { defineConfig, devices } = require('@playwright/test');
 
 /**
- * Playwright configuration for Conduit AngularJS E2E tests.
+ * Playwright configuration for Conduit E2E tests — targets the Angular 21 app (app-ng).
  *
  * Prerequisites before running:
- *   1. Build the app: node_modules/.bin/gulp html browserify
- *   2. Run: npm run test:e2e
+ *   1. Build the Angular app:  cd app-ng && npm run build
+ *   2. Run:                    npm run test:e2e
  *
- * All API calls to conduit.productionready.io are intercepted via page.route()
- * inside the tests â€” no real backend required.
+ * The webServer serves the app-ng build as a SPA (history-API fallback via `serve -s`)
+ * on port 4100. All API calls to conduit.productionready.io are intercepted via
+ * page.route() inside the tests — no real backend required.
  */
 module.exports = defineConfig({
   testDir: './tests/e2e',
@@ -37,9 +38,10 @@ module.exports = defineConfig({
   ],
 
   webServer: {
-    command: 'node_modules/.bin/serve -s build -l 4100 --no-clipboard',
+    // Serve the Angular SPA build with history-API fallback (-s).
+    command: 'node_modules/.bin/serve -s app-ng/dist/app-ng/browser -l 4100 --no-clipboard',
     url: 'http://localhost:4100',
     reuseExistingServer: false,
-    timeout: 10000,
+    timeout: 30000,
   },
 });

@@ -27,7 +27,7 @@ describe('App', () => {
     expect(compiled.querySelector('app-footer')).toBeTruthy();
   });
 
-  it('does not call GET /user on init when there is no token', () => {
+  it('does not trigger network on its own (session restore lives in APP_INITIALIZER)', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const httpMock = TestBed.inject(HttpTestingController);

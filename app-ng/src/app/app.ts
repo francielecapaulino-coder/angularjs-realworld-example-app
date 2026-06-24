@@ -1,8 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './layout/header.component';
 import { FooterComponent } from './layout/footer.component';
-import { AuthService } from './core/auth/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -10,12 +9,8 @@ import { AuthService } from './core/auth/auth.service';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App implements OnInit {
-  private readonly auth = inject(AuthService);
-
-  ngOnInit(): void {
-    // Restore session from a stored token on app start (mirrors legacy verifyAuth
-    // on the abstract `app` state). Errors are handled inside the service.
-    this.auth.verifyAuth().subscribe();
-  }
+export class App {
+  // Session restoration runs in an APP_INITIALIZER (see app.config.ts) so the
+  // session is ready before the first navigation and route guards evaluate
+  // against the restored auth state.
 }
