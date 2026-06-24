@@ -59,4 +59,14 @@ describe('ArticlesService', () => {
     expect(req.request.params.get('limit')).toBe('10');
     req.flush({ articles: [], articlesCount: 0 });
   });
+
+  it('get(slug) fetches GET /articles/:slug and unwraps the article', async () => {
+    const result = new Promise<{ slug: string }>((resolve) => {
+      service.get('a-1').subscribe((article) => resolve(article));
+    });
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/articles/a-1`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ article: { slug: 'a-1', title: 'T' } });
+    expect((await result).slug).toBe('a-1');
+  });
 });
