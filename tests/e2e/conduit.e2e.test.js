@@ -258,6 +258,15 @@ test.describe('Home page — unauthenticated', () => {
     await expect(page.locator('.article-preview h1').first()).toContainText('E2E Test Article');
   });
 
+  // INTENTIONALLY FAILING TEST — branch `failing-e2e` only.
+  // Demonstrates the E2E safety net catching a regression: it asserts a title
+  // that the mock does NOT return. The matching branch `passing-e2e` omits this
+  // test. Required by ROADMAP §11 (failing/passing branch pair).
+  test('FAILING: preview shows a title that does not exist (regression demo)', async ({ page }) => {
+    await page.goto('/#!/');
+    await expect(page.locator('.article-preview h1').first()).toContainText('This Title Does Not Exist');
+  });
+
   test('shows Sign In and Sign Up links when not authenticated', async ({ page }) => {
     await page.goto('/#!/');
     await expect(page.locator('a[ui-sref="app.login"]')).toBeVisible();
