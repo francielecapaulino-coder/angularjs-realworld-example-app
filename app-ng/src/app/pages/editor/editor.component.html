@@ -1,0 +1,52 @@
+<div class="editor-page">
+  <div class="container page">
+    <div class="row">
+      <div class="col-md-10 offset-md-1 col-xs-12">
+
+        <app-list-errors [errors]="errors()"></app-list-errors>
+
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <fieldset [disabled]="submitting()">
+
+            <fieldset class="form-group">
+              <input class="form-control form-control-lg" type="text"
+                formControlName="title" placeholder="Article Title" />
+            </fieldset>
+
+            <fieldset class="form-group">
+              <input class="form-control" type="text"
+                formControlName="description" placeholder="What's this article about?" />
+            </fieldset>
+
+            <fieldset class="form-group">
+              <textarea class="form-control" rows="8"
+                formControlName="body" placeholder="Write your article (in markdown)"></textarea>
+            </fieldset>
+
+            <fieldset class="form-group">
+              <input class="form-control" type="text" placeholder="Enter tags"
+                [value]="tagField()"
+                (input)="tagField.set($any($event.target).value)"
+                (keyup.enter)="addTag()" />
+
+              <div class="tag-list">
+                @for (tag of tagList(); track tag) {
+                  <span class="tag-default tag-pill">
+                    <i class="ion-close-round" (click)="removeTag(tag)"></i>
+                    {{ tag }}
+                  </span>
+                }
+              </div>
+            </fieldset>
+
+            <button class="btn btn-lg pull-xs-right btn-primary" type="submit">
+              Publish Article
+            </button>
+
+          </fieldset>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
