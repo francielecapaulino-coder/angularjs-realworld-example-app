@@ -1,8 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { APP_CONSTANTS } from '../config/app.constants';
-import { ArticleListResponse, ArticleQuery } from '../models/article.model';
+import { Article, ArticleListResponse, ArticleQuery } from '../models/article.model';
+
+interface SingleArticleResponse {
+  article: Article;
+}
 
 /**
  * Articles API (mirrors legacy src/js/services/articles.service.js).
@@ -28,5 +32,12 @@ export class ArticlesService {
     return this.http.get<ArticleListResponse>(`${APP_CONSTANTS.apiBase}${path}`, {
       params,
     });
+  }
+
+  /** Fetches a single article by slug (GET /articles/:slug). */
+  get(slug: string): Observable<Article> {
+    return this.http
+      .get<SingleArticleResponse>(`${APP_CONSTANTS.apiBase}/articles/${slug}`)
+      .pipe(map((res) => res.article));
   }
 }

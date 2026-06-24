@@ -1,0 +1,75 @@
+@if (article(); as art) {
+  <div class="article-page">
+
+    <!-- Banner: title + author meta (display-only in this slice) -->
+    <div class="banner">
+      <div class="container">
+        <h1>{{ art.title }}</h1>
+        <div class="article-meta">
+          <a [routerLink]="['/profile', art.author.username]">
+            @if (art.author.image) {
+              <img [src]="art.author.image" alt="" />
+            }
+          </a>
+          <div class="info">
+            <a class="author" [routerLink]="['/profile', art.author.username]">
+              {{ art.author.username }}
+            </a>
+            <span class="date">{{ art.createdAt | date: 'longDate' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container page">
+      <!-- Sanitized markdown body -->
+      <div class="row article-content">
+        <div class="col-xs-12">
+          <div [innerHTML]="art.body | markdown"></div>
+          <ul class="tag-list">
+            @for (tag of art.tagList; track tag) {
+              <li class="tag-default tag-pill tag-outline">{{ tag }}</li>
+            }
+          </ul>
+        </div>
+      </div>
+
+      <hr />
+
+      <!-- Comments -->
+      <div class="row">
+        <div class="col-xs-12 col-md-8 offset-md-2">
+
+          @if (isAuthenticated()) {
+            <!-- Comment form arrives in the write-actions slice. -->
+            <form class="card comment-form">
+              <fieldset disabled>
+                <div class="card-block">
+                  <textarea class="form-control" placeholder="Write a comment..." rows="3"></textarea>
+                </div>
+                <div class="card-footer">
+                  <button class="btn btn-sm btn-primary" type="button" disabled>Post Comment</button>
+                </div>
+              </fieldset>
+            </form>
+          } @else {
+            <div>
+              <a routerLink="/login">Sign in</a> or <a routerLink="/register">sign up</a>
+              to add comments on this article.
+            </div>
+          }
+
+          @for (comment of comments(); track comment.id) {
+            <app-comment-card [comment]="comment"></app-comment-card>
+          }
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+} @else if (loading()) {
+  <div class="article-page">
+    <div class="container page">Loading article...</div>
+  </div>
+}
