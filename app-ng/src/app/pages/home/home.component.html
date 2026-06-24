@@ -1,0 +1,69 @@
+<div class="home-page">
+
+  @if (!isAuthenticated()) {
+    <div class="banner">
+      <div class="container">
+        <h1 class="logo-font">{{ appName }}</h1>
+        <p>A place to share your knowledge.</p>
+      </div>
+    </div>
+  }
+
+  <div class="container page">
+    <div class="row">
+
+      <!-- Main view: tabs + article list -->
+      <div class="col-md-9">
+        <div class="feed-toggle">
+          <ul class="nav nav-pills outline-active">
+
+            @if (isAuthenticated()) {
+              <li class="nav-item">
+                <a class="nav-link" href="" [class.active]="isFeed()"
+                  (click)="$event.preventDefault(); showFeed()">Your Feed</a>
+              </li>
+            }
+
+            <li class="nav-item">
+              <a class="nav-link" href="" [class.active]="isGlobal()"
+                (click)="$event.preventDefault(); showGlobal()">Global Feed</a>
+            </li>
+
+            @if (activeTag) {
+              <li class="nav-item">
+                <a class="nav-link active" href="" (click)="$event.preventDefault()">
+                  <i class="ion-pound"></i> {{ activeTag }}
+                </a>
+              </li>
+            }
+
+          </ul>
+        </div>
+
+        <app-article-list [limit]="10" [listConfig]="listConfig()"></app-article-list>
+      </div>
+
+      <!-- Sidebar: popular tags -->
+      <div class="col-md-3">
+        <div class="sidebar">
+          <p>Popular Tags</p>
+
+          @if (tags().length > 0) {
+            <div class="tag-list">
+              @for (tag of tags(); track tag) {
+                <a class="tag-default tag-pill" href=""
+                  (click)="$event.preventDefault(); showTag(tag)">{{ tag }}</a>
+              }
+            </div>
+          } @else if (!tagsLoaded()) {
+            <div>Loading tags...</div>
+          } @else {
+            <div class="post-preview">No tags are here... yet.</div>
+          }
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
