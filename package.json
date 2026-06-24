@@ -5,7 +5,10 @@
   "author": "Thinkster",
   "license": "MIT",
   "scripts": {
-    "test:contract": "jest tests/contract/ --testTimeout=15000"
+    "build": "node_modules/.bin/gulp html browserify",
+    "serve:build": "node_modules/.bin/serve -s build -l 4100 --no-clipboard",
+    "test:contract": "jest tests/contract/ --testTimeout=15000",
+    "test:e2e": "npx playwright test"
   },
   "dependencies": {
     "angular": "^1.5.0-rc.2",
@@ -25,8 +28,10 @@
     "vinyl-source-stream": "^1.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.44.0",
     "browser-sync": "2.18.13",
     "jest": "^27.5.1",
-    "js-yaml": "^3.14.2"
+    "js-yaml": "^3.14.2",
+    "serve": "^14.2.6"
   }
 }
