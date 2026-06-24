@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { PlaceholderComponent } from './pages/placeholder.component';
 import { AuthComponent } from './pages/auth/auth.component';
+import { HomeComponent } from './pages/home/home.component';
 
 /**
  * Clean-URL routes (history API, per ADR-001). Remaining targets are placeholders;
@@ -8,7 +9,7 @@ import { AuthComponent } from './pages/auth/auth.component';
  * UI-Router states (home, login, register, article, editor, profile, settings).
  */
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', component: PlaceholderComponent, data: { name: 'Home' } },
+  { path: '', pathMatch: 'full', component: HomeComponent },
   { path: 'login', component: AuthComponent, data: { authType: 'login' } },
   { path: 'register', component: AuthComponent, data: { authType: 'register' } },
   { path: 'article/:slug', component: PlaceholderComponent, data: { name: 'Article' } },
