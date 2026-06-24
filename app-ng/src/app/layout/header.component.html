@@ -1,0 +1,50 @@
+<nav class="navbar navbar-light">
+  <div class="container">
+
+    <a class="navbar-brand" routerLink="/">{{ appName }}</a>
+
+    @if (!isAuthenticated()) {
+      <!-- Logged-out menu -->
+      <ul class="nav navbar-nav pull-xs-right">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/" routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/login" routerLinkActive="active">Sign in</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/register" routerLinkActive="active">Sign up</a>
+        </li>
+      </ul>
+    } @else {
+      <!-- Logged-in menu -->
+      <ul class="nav navbar-nav pull-xs-right">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/" routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/editor" routerLinkActive="active">
+            <i class="ion-compose"></i>&nbsp;New Article
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/settings" routerLinkActive="active">
+            <i class="ion-gear-a"></i>&nbsp;Settings
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLinkActive="active"
+            [routerLink]="['/profile', currentUser()?.username]">
+            @if (currentUser()?.image) {
+              <img [src]="currentUser()!.image" class="user-pic" alt="" />
+            }
+            {{ currentUser()?.username }}
+          </a>
+        </li>
+      </ul>
+    }
+
+  </div>
+</nav>
