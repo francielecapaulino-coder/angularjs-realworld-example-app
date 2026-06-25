@@ -543,6 +543,48 @@ test.describe('verifyAuth failure on bootstrap', () => {
     const storedToken = await page.evaluate(() => localStorage.getItem('jwtToken'));
     expect(storedToken).toBeNull(); // token cleared on failed restore
   });
+
+  test('expired token (401) on GET /user redirects to /login and clears the token', async ({ page }) => {
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      if (route.request().method() === 'GET' && url.endsWith('/user')) {
+        return route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ errors: { message: 'Unauthorized' } }) });
+      }
+      if (url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }) });
+    });
+
+    await injectFakeTokenBeforeLoad(page);
+    await page.goto('/editor');
+
+    await expect(page).toHaveURL(/\/login$/, { timeout: 10000 });
+    const storedToken = await page.evaluate(() => localStorage.getItem('jwtToken'));
+    expect(storedToken).toBeNull();
+  });
+
+  test('hung GET /user does NOT freeze the app: it times out and redirects to /login', async ({ page }) => {
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      if (route.request().method() === 'GET' && url.endsWith('/user')) {
+        // Never fulfilled within the app's verifyAuth timeout window -> app must
+        // not hang; the timeout settles the stream and the guard redirects.
+        return; // leave the request hanging
+      }
+      if (url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }) });
+    });
+
+    await injectFakeTokenBeforeLoad(page);
+    await page.goto('/settings');
+
+    // VERIFY_AUTH_TIMEOUT_MS is 8000ms; allow margin so the timeout fires.
+    await expect(page).toHaveURL(/\/login$/, { timeout: 15000 });
+    await expect(page.locator('input[placeholder="Email"]')).toBeVisible();
+  });
 });
 
 // ---------------------------------------------------------------------------
