@@ -511,3 +511,46 @@ test.describe('Settings — authenticated', () => {
     expect(storedToken).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Suite 11 — Bootstrap loading state
+//
+// When verifyAuth makes a network call (token present), the APP_INITIALIZER
+// blocks bootstrap until GET /user resolves. The static loading spinner inside
+// <app-root> (index.html) must be visible during that window and disappear once
+// the app renders. We DELAY GET /user to make the window observable.
+// ---------------------------------------------------------------------------
+
+test.describe('Bootstrap loading state', () => {
+  test('shows the loading spinner during bootstrap, then removes it after render', async ({ page }) => {
+    // Custom mocks: same as setupApiMocks but with a delayed GET /user.
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      const method = route.request().method();
+
+      if (method === 'GET' && url.endsWith('/user')) {
+        // Delay the session-restore response so the bootstrap loader is observable.
+        await new Promise((r) => setTimeout(r, 1500));
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: MOCK_USER }) });
+      }
+      if (method === 'GET' && url.includes('/articles')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }) });
+      }
+      if (method === 'GET' && url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) });
+    });
+
+    await injectFakeTokenBeforeLoad(page);
+
+    // Start navigation but don't await full load — the loader should be up while
+    // GET /user is in flight (bootstrap blocked by APP_INITIALIZER).
+    await page.goto('/', { waitUntil: 'commit' });
+    await expect(page.locator('.app-loading')).toBeVisible({ timeout: 5000 });
+
+    // Once the delayed GET /user resolves and the app renders, the loader is gone.
+    await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.app-loading')).toHaveCount(0);
+  });
+});
