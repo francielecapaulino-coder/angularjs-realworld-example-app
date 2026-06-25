@@ -10,8 +10,11 @@ Active work unit: 013-e2e-migration
 
 ## Progresso
 - Fase 3 (005–012): COMPLETA e mergeada. Todas as telas principais migradas para Angular 21.
-- 013 (Fase 4) migração da suite E2E para o app-ng + **correção de corrida de sessão**:
-  build + 89 unit + 26 E2E verdes. Aguardando revisão humana do PR. `src/` legado intocado.
+- 013 (Fase 4) migração da suite E2E para o app-ng + **correção de corrida de sessão**: MERGEADA (PR #14).
+  - Continuação da slice 013 (follow-ups, consolidados em 1 PR): garantia de resolução de auth
+    (teste), loading spinner no bootstrap, e timeout do verifyAuth + ampla cobertura E2E.
+    Docs em `docs/agent/work/013-e2e-migration/followups/`. build + 93 unit + 37 E2E verdes.
+- 014 (Fase 4) descomissionamento do legado: PR #15 aberto (à parte).
 
 ## Correção relevante (013)
 - Restauração de sessão movida para `provideAppInitializer` + `withDisabledInitialNavigation`:
