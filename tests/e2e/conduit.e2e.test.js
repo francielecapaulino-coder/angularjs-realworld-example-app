@@ -841,3 +841,43 @@ test.describe('Dark mode toggle', () => {
     await expect(html).toHaveAttribute('data-theme', 'light');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Suite 19 — Editor draft autosave (slice 021)
+//
+// While composing a NEW article, the editor persists the form to localStorage
+// ('conduit-editor-draft'). The draft must be restored after a page refresh and
+// cleared after a successful submit.
+// ---------------------------------------------------------------------------
+
+test.describe('Editor draft autosave', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    await injectFakeTokenBeforeLoad(page); // /editor is guarded
+  });
+
+  test('persists the draft and restores it after a refresh, then clears on submit', async ({ page }) => {
+    await page.goto('/editor');
+    await expect(page.locator('input[placeholder="Article Title"]')).toBeVisible({ timeout: 10000 });
+
+    await page.fill('input[placeholder="Article Title"]', 'Draft title E2E');
+    await page.fill('input[placeholder="What\'s this article about?"]', 'Draft description');
+    await page.fill('textarea[placeholder="Write your article (in markdown)"]', 'Draft body content');
+
+    // Wait for the debounced autosave (400ms) to persist.
+    await expect.poll(async () =>
+      page.evaluate(() => localStorage.getItem('conduit-editor-draft')),
+    ).not.toBeNull();
+
+    // Refresh: the draft is restored into the form.
+    await page.reload();
+    await expect(page.locator('input[placeholder="Article Title"]')).toHaveValue('Draft title E2E', { timeout: 10000 });
+    await expect(page.locator('textarea[placeholder="Write your article (in markdown)"]')).toHaveValue('Draft body content');
+
+    // Submit: navigates to the created article and clears the draft.
+    await page.click('button[type="submit"]');
+    await expect(page.locator('.article-page')).toBeVisible({ timeout: 10000 });
+    const stored = await page.evaluate(() => localStorage.getItem('conduit-editor-draft'));
+    expect(stored).toBeNull();
+  });
+});

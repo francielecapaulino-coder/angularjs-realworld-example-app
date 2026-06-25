@@ -18,7 +18,7 @@ encontrado no repositório ou executado; nada foi inferido.
 | **ANGULAR / FRONTEND** ||||||
 | 1 | Migração para Angular v21 | ✅ | `app-ng/package.json`: `"@angular/core": "^21.2.0"`, `"@angular/cli": "^21.2.17"`, `typescript ~5.9.2` | Versão real confirmada; app standalone em `app-ng/`. |
 | 2 | Dark mode toggle funcional | ✅ | Slice 020: `app-ng/src/app/core/theme/theme.service.ts` (signal+persistencia+prefers), botao em `header.component.html`, overrides em `styles.css`, anti-FOUC em `index.html`. Testes: unit (ThemeService 5 + header 1) e e2e (toggle+reload). | Resolvido na slice 020 (Issue #23). |
-| 3 | Draft com localStorage no editor | ❌ | `app-ng/src/app/pages/editor/editor.component.ts` → **nenhuma** referência a `localStorage`/`draft`. O único `localStorage` no `editor.component.spec.ts` é cleanup do token de auth | Editor não persiste rascunho antes do submit. |
+| 3 | Draft com localStorage no editor | ✅ | Slice 021: `editor.component.ts` autosave em `localStorage['conduit-editor-draft']` (valueChanges debounced + effect na tagList), restore no init, clear no submit; edit mode nao usa draft. Testes: unit (4) e e2e (digita->reload->restaura->submit limpa). | Resolvido na slice 021 (Issue #25). |
 | 4 | Testes E2E com Playwright | ✅ | `tests/e2e/conduit.e2e.test.js`; `playwright.config.js`. Execução: **37 passed (22.8s)** | Suíte robusta (18 describes). |
 | 5 | Branch com teste quebrado + branch com o mesmo passando | ✅ | Branches `failing-e2e` e `passing-e2e`. `git diff passing-e2e failing-e2e`: +9 linhas, teste `FAILING: preview shows a title that does not exist`. Topo: `4e25978 test: add intentionally failing E2E test` | Par quebrado/passando existe. |
 | **PROCESSO / GOVERNANÇA** ||||||
@@ -48,12 +48,13 @@ encontrado no repositório ou executado; nada foi inferido.
 
 ### Resumo quantitativo
 
-- ✅ Feito: **12** (1, 2, 4, 5, 6, 7, 9, 10, 11, 12, 14, 23)
+- ✅ Feito: **13** (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 14, 23)
 - 🟡 Parcial: **1** (22 - estrutura criada; lacuna retroativa 002-018)
-- ❌ Nao feito: **10** (3, 8, 13, 15, 16, 17, 18, 19, 20, 21)
+- ❌ Nao feito: **9** (8, 13, 15, 16, 17, 18, 19, 20, 21)
 
 > Atualizacao (slice 019): itens 6, 7, 10, 23 resolvidos; 22 parcial (registro a partir de 019).
 > Atualizacao (slice 020): item 2 (dark mode) resolvido.
+> Atualizacao (slice 021): item 3 (editor draft) resolvido.
 
 > Observação: muitos ❌ derivam da ausência de um backend/infra neste repositório (frontend-only).
 
