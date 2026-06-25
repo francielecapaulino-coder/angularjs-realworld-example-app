@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Mutation testing via the command runner (the app uses `ng test`/Vitest driven by the Angular CLI, with no standalone vitest.config). Each mutant runs the whole suite; a non-zero exit kills the mutant. break=null so CI never fails on score during this baseline slice.",
+  "packageManager": "npm",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "npm test"
+  },
+  "_mutate_comment": "Baseline scope (slice 022): high-value core auth/theme logic. The command runner re-runs the whole suite per mutant (~minutes/file), so mutating the entire app is not feasible in one pass yet. Expand this list in follow-up slices as the suite is optimized.",
+  "mutate": [
+    "src/app/core/theme/theme.service.ts",
+    "src/app/core/auth/jwt.service.ts",
+    "src/app/core/auth/auth.guard.ts",
+    "src/app/core/auth/token.interceptor.ts"
+  ],
+  "reporters": ["html", "json", "clear-text", "progress"],
+  "htmlReporter": { "fileName": "reports/mutation/index.html" },
+  "jsonReporter": { "fileName": "reports/mutation/mutation.json" },
+  "thresholds": {
+    "high": 95,
+    "low": 80,
+    "break": null
+  },
+  "timeoutMS": 60000,
+  "concurrency": 2
+}

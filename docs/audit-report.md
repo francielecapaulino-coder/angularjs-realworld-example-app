@@ -30,7 +30,7 @@ encontrado no repositório ou executado; nada foi inferido.
 | **TESTES** ||||||
 | 11 | Testes de integração cobrindo o contrato da API | ✅ | `tests/contract/api.contract.test.js` valida paths/envelopes/auth vs `docs/api/realworld-openapi.yaml`. Execução: **11 passed** (Test Suites: 1 passed) | Contrato consumido validado contra spec + API viva. |
 | 12 | E2E cobrindo fluxos principais | ✅ | `tests/e2e/conduit.e2e.test.js`: home/feed, login, register, article, editor (+guard), settings, profile, favorite/follow, refresh-regression. **37 passed** | Cobertura ampla dos fluxos. |
-| 13 | Mutation testing (Stryker front / Pitest back) com score real vs meta 95% | ❌ | `grep stryker\|pitest` em `app-ng/package.json` e `package.json` → **ausente**; nenhum `stryker.conf.*`/config Pitest; **0** arquivos | Não configurado; score não medível. Pitest, ademais, exigiria backend (inexistente). |
+| 13 | Mutation testing (Stryker front / Pitest back) com score real vs meta 95% | 🟡 | Slice 022: Stryker configurado no app-ng (`stryker.config.json`, `npm run test:mutation`). Score REAL medido (baseline core): **78.48%** (auth.guard 100%, jwt 100%, theme 82.22%, token.interceptor 62.50%). Evidencia: `docs/agent/work/022-stryker/EVIDENCE.md`. | Stryker configurado e score medido, porem **abaixo da meta 95%** e em **escopo parcial** (command runner ~5min/arquivo). Pitest (backend) permanece N/A. Expandir escopo + subir score em slices seguintes. |
 | **API / CONTRATO** ||||||
 | 14 | Documentação OpenAPI/Swagger (arquivo ou endpoint) | ✅ | `docs/api/realworld-openapi.yaml` (**769 linhas**, `openapi: 3.0.3`). Docs de suporte em `docs/agent/work/002-realworld-openapi/` | É o contrato **consumido** (API pública), não um endpoint próprio servido por backend. Atende como arquivo OpenAPI. |
 | **INFRAESTRUTURA** ||||||
@@ -49,12 +49,13 @@ encontrado no repositório ou executado; nada foi inferido.
 ### Resumo quantitativo
 
 - ✅ Feito: **13** (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 14, 23)
-- 🟡 Parcial: **1** (22 - estrutura criada; lacuna retroativa 002-018)
-- ❌ Nao feito: **9** (8, 13, 15, 16, 17, 18, 19, 20, 21)
+- 🟡 Parcial: **2** (13 - Stryker configurado, score 78.48% < 95% e escopo parcial; 22 - prompts a partir de 019)
+- ❌ Nao feito: **8** (8, 15, 16, 17, 18, 19, 20, 21)
 
 > Atualizacao (slice 019): itens 6, 7, 10, 23 resolvidos; 22 parcial (registro a partir de 019).
 > Atualizacao (slice 020): item 2 (dark mode) resolvido.
 > Atualizacao (slice 021): item 3 (editor draft) resolvido.
+> Atualizacao (slice 022): item 13 (Stryker) parcial - baseline 78.48% medido (< meta 95%, escopo parcial).
 
 > Observação: muitos ❌ derivam da ausência de um backend/infra neste repositório (frontend-only).
 
