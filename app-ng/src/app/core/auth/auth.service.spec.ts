@@ -4,7 +4,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { AuthService, User } from './auth.service';
+import { AuthService, User, VERIFY_AUTH_TIMEOUT_MS } from './auth.service';
 import { JwtService } from './jwt.service';
 import { APP_CONSTANTS } from '../config/app.constants';
 
@@ -77,7 +77,7 @@ describe('AuthService', () => {
     expect(auth.currentUser()?.username).toBe('user-006');
   });
 
-  it('verifyAuth purges auth when GET /user fails', async () => {
+  it('verifyAuth purges auth when GET /user fails (401 expired token)', async () => {
     jwt.save(FAKE_TOKEN);
     const result = new Promise<boolean>((resolve) => {
       auth.verifyAuth().subscribe((value) => resolve(value));
@@ -87,6 +87,40 @@ describe('AuthService', () => {
     expect(await result).toBe(false);
     expect(auth.isAuthenticated()).toBe(false);
     expect(jwt.get()).toBeNull();
+  });
+
+  it('verifyAuth resolves false (purges) on a network error', async () => {
+    jwt.save(FAKE_TOKEN);
+    const result = new Promise<boolean>((resolve) => {
+      auth.verifyAuth().subscribe((value) => resolve(value));
+    });
+    const req = httpMock.expectOne(`${APP_CONSTANTS.apiBase}/user`);
+    req.error(new ProgressEvent('error')); // simulated network failure
+    expect(await result).toBe(false);
+    expect(auth.isAuthenticated()).toBe(false);
+    expect(jwt.get()).toBeNull();
+  });
+
+  it('verifyAuth times out (does not hang) and purges when GET /user never responds', async () => {
+    vi.useFakeTimers();
+    try {
+      jwt.save(FAKE_TOKEN);
+      let resolved: boolean | undefined;
+      auth.verifyAuth().subscribe((value) => (resolved = value));
+
+      // A request is in flight but never responds (hung network).
+      httpMock.expectOne(`${APP_CONSTANTS.apiBase}/user`);
+
+      // Advance past the timeout window: rxjs `timeout` fires, the stream errors,
+      // catchError purges + emits false. The hung request is unsubscribed/cancelled.
+      await vi.advanceTimersByTimeAsync(VERIFY_AUTH_TIMEOUT_MS);
+
+      expect(resolved).toBe(false); // settled, not stuck
+      expect(auth.isAuthenticated()).toBe(false);
+      expect(jwt.get()).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('attemptAuth login POSTs to /users/login and stores the session', async () => {
