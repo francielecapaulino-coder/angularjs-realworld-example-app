@@ -544,3 +544,128 @@ test.describe('verifyAuth failure on bootstrap', () => {
     expect(storedToken).toBeNull(); // token cleared on failed restore
   });
 });
+
+// ---------------------------------------------------------------------------
+// Suite 13 — Login validation errors (negative auth)
+// ---------------------------------------------------------------------------
+
+test.describe('Login validation errors', () => {
+  test('invalid credentials (422) show the API error messages', async ({ page }) => {
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      if (route.request().method() === 'POST' && url.endsWith('/users/login')) {
+        return route.fulfill({
+          status: 422,
+          contentType: 'application/json',
+          body: JSON.stringify({ errors: { 'email or password': ['is invalid'] } }),
+        });
+      }
+      if (url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: [], articlesCount: 0 }) });
+    });
+
+    await page.goto('/login');
+    await page.fill('input[placeholder="Email"]', 'test-e2e@example.test');
+    await page.fill('input[placeholder="Password"]', 'wrong-not-real');
+    await page.click('button.btn-primary');
+
+    await expect(page.locator('.error-messages li')).toContainText('is invalid', { timeout: 10000 });
+    // Still on the login page (no navigation on failure).
+    await expect(page).toHaveURL(/\/login$/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 14 — Authenticated home feed tabs (Your Feed / Global Feed)
+// ---------------------------------------------------------------------------
+
+test.describe('Home feed tabs — authenticated', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    await injectFakeTokenBeforeLoad(page);
+  });
+
+  test('authenticated home shows Your Feed and Global Feed tabs', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.feed-toggle')).toContainText('Your Feed');
+    await expect(page.locator('.feed-toggle')).toContainText('Global Feed');
+    // Switching to Global Feed keeps article previews visible.
+    await page.locator('.feed-toggle .nav-link', { hasText: 'Global Feed' }).click();
+    await expect(page.locator('.article-preview').first()).toBeVisible({ timeout: 5000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 15 — Settings update (PUT /user) navigates to the profile
+// ---------------------------------------------------------------------------
+
+test.describe('Settings update — authenticated', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    await injectFakeTokenBeforeLoad(page);
+  });
+
+  test('updating settings PUTs /user and navigates to the profile page', async ({ page }) => {
+    await page.goto('/settings');
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 10000 });
+    await page.fill('textarea[placeholder="Short bio about you"]', 'Updated bio via E2E');
+    await page.click('button.btn-primary');
+    // setupApiMocks returns MOCK_USER (username e2e-user) for PUT /user.
+    await expect(page).toHaveURL(/\/profile\/e2e-user$/, { timeout: 10000 });
+    await expect(page.locator('.profile-page')).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 16 — Author actions on the article page (Edit / Delete)
+//
+// When the logged-in user IS the article author, article-actions shows
+// Edit/Delete instead of Follow/Favorite. Deleting routes back home.
+// ---------------------------------------------------------------------------
+
+test.describe('Article author actions — authenticated', () => {
+  test.beforeEach(async ({ page }) => {
+    // GET /user returns a user matching the article author (demo-author),
+    // so the author branch of article-actions renders.
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      const method = route.request().method();
+      if (method === 'GET' && url.endsWith('/user')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { ...MOCK_USER, username: 'demo-author' } }) });
+      }
+      if (method === 'DELETE' && url.match(/\/articles\/[^/]+$/)) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) });
+      }
+      if (method === 'GET' && url.match(/\/articles\/[^/]+\/comments$/)) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ comments: MOCK_COMMENTS }) });
+      }
+      if (method === 'GET' && url.match(/\/articles\/[^/]+$/) && !url.includes('/feed')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ article: MOCK_ARTICLES[0] }) });
+      }
+      if (url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }) });
+    });
+    await injectFakeTokenBeforeLoad(page);
+  });
+
+  test('author sees Edit and Delete on the article page', async ({ page }) => {
+    await page.goto('/article/e2e-test-article-001');
+    await expect(page.locator('.article-page')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.article-page')).toContainText('Edit Article');
+    await expect(page.locator('.article-page')).toContainText('Delete Article');
+    // The non-author Follow button must NOT be present.
+    await expect(page.locator('.article-page app-follow-button')).toHaveCount(0);
+  });
+
+  test('deleting the article routes back to the home page', async ({ page }) => {
+    await page.goto('/article/e2e-test-article-001');
+    await expect(page.locator('.article-page')).toBeVisible({ timeout: 10000 });
+    await page.locator('button.btn-outline-danger', { hasText: 'Delete Article' }).first().click();
+    await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
+  });
+});
