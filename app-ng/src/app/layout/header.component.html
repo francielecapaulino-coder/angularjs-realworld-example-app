@@ -3,6 +3,20 @@
 
     <a class="navbar-brand" routerLink="/">{{ appName }}</a>
 
+    <button
+      type="button"
+      class="nav-link btn btn-link theme-toggle"
+      (click)="toggleTheme()"
+      [attr.aria-pressed]="theme() === 'dark'"
+      [attr.aria-label]="theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+      title="Toggle theme">
+      @if (theme() === 'dark') {
+        <i class="ion-ios-sunny" aria-hidden="true"></i>
+      } @else {
+        <i class="ion-ios-moon" aria-hidden="true"></i>
+      }
+    </button>
+
     @if (!isAuthenticated()) {
       <!-- Logged-out menu -->
       <ul class="nav navbar-nav pull-xs-right">

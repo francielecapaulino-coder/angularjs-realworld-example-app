@@ -1,1 +1,101 @@
 /* You can add global styles to this file, and also import other style files */
+
+/*
+ * Dark mode overrides.
+ *
+ * The Conduit design system (demo.productionready.io/main.css) is light-only.
+ * We layer a dark theme on top, activated by `data-theme="dark"` on <html>
+ * (set by ThemeService and by the anti-FOUC inline script in index.html).
+ * Scope: essential surfaces for readability, not a full redesign.
+ */
+
+:root[data-theme='dark'] {
+  --bg: #0f1418;
+  --bg-elev: #1a2128;
+  --text: #d7dde2;
+  --text-muted: #9aa6b1;
+  --border: #2b343d;
+  --link: #5cb85c; /* Conduit brand green, kept for continuity */
+}
+
+:root[data-theme='dark'] body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+/* Navbar */
+:root[data-theme='dark'] .navbar,
+:root[data-theme='dark'] .navbar-light {
+  background-color: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+}
+:root[data-theme='dark'] .navbar-light .navbar-brand,
+:root[data-theme='dark'] .navbar-light .nav-link {
+  color: var(--text-muted);
+}
+:root[data-theme='dark'] .navbar-light .nav-link.active,
+:root[data-theme='dark'] .navbar-light .navbar-brand {
+  color: var(--text);
+}
+
+/* Generic surfaces: cards, previews, article meta */
+:root[data-theme='dark'] .article-preview,
+:root[data-theme='dark'] .card,
+:root[data-theme='dark'] .card-block,
+:root[data-theme='dark'] .card-footer {
+  background-color: var(--bg-elev);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* Banner */
+:root[data-theme='dark'] .banner {
+  background-color: var(--bg-elev);
+  box-shadow: none;
+}
+
+/* Text + headings + paragraphs */
+:root[data-theme='dark'] h1,
+:root[data-theme='dark'] h2,
+:root[data-theme='dark'] h3,
+:root[data-theme='dark'] p,
+:root[data-theme='dark'] .article-content {
+  color: var(--text);
+}
+
+/* Links */
+:root[data-theme='dark'] a:not(.btn):not(.nav-link) {
+  color: var(--link);
+}
+
+/* Form controls */
+:root[data-theme='dark'] .form-control,
+:root[data-theme='dark'] input.form-control,
+:root[data-theme='dark'] textarea.form-control {
+  background-color: var(--bg-elev);
+  border-color: var(--border);
+  color: var(--text);
+}
+:root[data-theme='dark'] .form-control::placeholder {
+  color: var(--text-muted);
+}
+
+/* Footer */
+:root[data-theme='dark'] .footer {
+  background-color: var(--bg-elev);
+  border-top: 1px solid var(--border);
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0 0.75rem;
+  font-size: 1.1rem;
+  line-height: inherit;
+}
+.theme-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { APP_CONSTANTS } from '../core/config/app.constants';
+import { ThemeService } from '../core/theme/theme.service';
 
 /**
  * Top navbar. Mirrors legacy src/js/layout/header.html, with reactive auth
@@ -15,8 +16,15 @@ import { APP_CONSTANTS } from '../core/config/app.constants';
 })
 export class HeaderComponent {
   private readonly auth = inject(AuthService);
+  private readonly themeService = inject(ThemeService);
 
   readonly appName = APP_CONSTANTS.appName;
   readonly isAuthenticated = this.auth.isAuthenticated;
   readonly currentUser = this.auth.currentUser;
+  readonly theme = this.themeService.theme;
+
+  /** Toggle between light and dark themes. */
+  toggleTheme(): void {
+    this.themeService.toggle();
+  }
 }

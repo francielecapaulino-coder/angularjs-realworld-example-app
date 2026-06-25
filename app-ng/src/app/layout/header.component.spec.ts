@@ -44,4 +44,23 @@ describe('HeaderComponent', () => {
     expect(text).toContain('user-006');
     expect(text).not.toContain('Sign in');
   });
+
+  it('renders a theme toggle button that flips data-theme on click', () => {
+    document.documentElement.removeAttribute('data-theme');
+    const fixture = TestBed.createComponent(HeaderComponent);
+    fixture.detectChanges();
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector(
+      'button.theme-toggle',
+    ) as HTMLButtonElement | null;
+    expect(button).toBeTruthy();
+    expect(button!.getAttribute('aria-label')).toContain('dark');
+
+    button!.click();
+    fixture.detectChanges();
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    // aria-label now offers switching back to light.
+    expect(button!.getAttribute('aria-label')).toContain('light');
+  });
 });
