@@ -1,8 +1,15 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, catchError, map, of, tap, timeout } from 'rxjs';
 import { JwtService } from './jwt.service';
 import { APP_CONSTANTS } from '../config/app.constants';
+
+/**
+ * Max time to wait for the session-restore request (GET /user) during bootstrap.
+ * If the network hangs, the request is aborted after this window so the app never
+ * stalls indefinitely — the user is treated as logged out and routed to /login.
+ */
+export const VERIFY_AUTH_TIMEOUT_MS = 8000;
 
 /** RealWorld user envelope (subset consumed by the app). */
 export interface User {
@@ -97,8 +104,16 @@ export class AuthService {
 
   /**
    * Verifies the stored token against `GET /user`.
-   * Resolves to `true` when authenticated, `false` otherwise.
-   * No token → immediately false (no HTTP call), matching legacy behavior.
+   * Resolves to `true` when authenticated, `false` otherwise — and NEVER rejects,
+   * so callers (e.g. the bootstrap initializer) can always settle.
+   *
+   * Failure handling:
+   *  - no token            → immediately false (no HTTP call);
+   *  - 401 (expired token) → caught, session purged, false;
+   *  - network error       → caught, session purged, false;
+   *  - hung request        → aborted after VERIFY_AUTH_TIMEOUT_MS, then treated like
+   *                          a network error (purge + false) so the app never stalls.
+   * In every failure case the user ends up logged out → guards redirect to /login.
    */
   verifyAuth(): Observable<boolean> {
     if (!this.jwt.get()) {
@@ -106,9 +121,11 @@ export class AuthService {
       return of(false);
     }
     return this.http.get<UserResponse>(`${APP_CONSTANTS.apiBase}/user`).pipe(
+      timeout(VERIFY_AUTH_TIMEOUT_MS),
       tap((res) => this.currentUserSig.set(res.user)),
       map(() => true),
       catchError(() => {
+        // Covers 401 (expired), network errors and TimeoutError alike.
         this.purgeAuth();
         return of(false);
       }),

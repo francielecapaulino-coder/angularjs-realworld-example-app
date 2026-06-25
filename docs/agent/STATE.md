@@ -10,10 +10,13 @@ Active work unit: 014-decommission-legacy
 - Legado AngularJS **arquivado** em `legacy/` (decisão do usuário — não apagado).
 
 ## Progresso
-- Fase 3 (005–012): COMPLETA e mergeada. Todas as telas migradas para Angular 21.
-- 013 (Fase 4) migração E2E p/ app-ng + correção de corrida de sessão: COMPLETA (mergeada).
-- 014 (Fase 4) descomissionamento: legado arquivado em `legacy/`; package.json/README/.gitignore
-  repontados p/ app-ng. Gates verdes (contract 11/11, unit 89/89, E2E 26/26). Aguardando revisão humana.
+- Fase 3 (005-012): COMPLETA e mergeada. Todas as telas principais migradas para Angular 21.
+- 013 (Fase 4) migracao da suite E2E para o app-ng + **correcao de corrida de sessao**: MERGEADA (PR #14).
+  - Continuacao da slice 013 (follow-ups, consolidados no PR #19): garantia de resolucao de auth
+    (teste), loading spinner no bootstrap, e timeout do verifyAuth + ampla cobertura E2E.
+    Docs em `docs/agent/work/013-e2e-migration/followups/`. build + 93 unit + 37 E2E verdes.
+- 014 (Fase 4) descomissionamento do legado: legado arquivado em `legacy/`; package.json/README/.gitignore
+  repontados p/ app-ng. Gates verdes (contract 11/11, unit 93/93, E2E 37/37). Aguardando revisao humana (PR #15).
 
 ## MARCO
 - **Migração concluída**: app-ng (Angular 21) é a aplicação oficial; AngularJS arquivado em `legacy/`.

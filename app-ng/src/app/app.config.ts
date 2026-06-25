@@ -17,6 +17,22 @@ import { routes } from './app.routes';
 import { tokenInterceptor } from './core/auth/token.interceptor';
 import { AuthService } from './core/auth/auth.service';
 
+/**
+ * Restores the session from a stored token and ONLY THEN triggers the initial
+ * navigation. This guarantees route guards (e.g. authGuard) are evaluated against
+ * a DEFINITIVELY RESOLVED auth state (authenticated or not) — never a pending one.
+ *
+ * `verifyAuth()` resolves to true/false (and never rejects — it handles errors
+ * internally), so the initial navigation always runs with a settled state.
+ */
+export async function restoreSessionThenNavigate(
+  auth: AuthService,
+  router: Router,
+): Promise<void> {
+  await firstValueFrom(auth.verifyAuth());
+  await router.initialNavigation();
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -27,14 +43,7 @@ export const appConfig: ApplicationConfig = {
     // authenticated state instead of racing verifyAuth and bouncing to /login.
     provideRouter(routes, withComponentInputBinding(), withDisabledInitialNavigation()),
     provideHttpClient(withInterceptors([tokenInterceptor])),
-    // Restore the session from a stored token BEFORE the first navigation, then
-    // kick off the initial navigation. Mirrors the legacy `verifyAuth` resolve on
-    // the abstract `app` state.
-    provideAppInitializer(async () => {
-      const auth = inject(AuthService);
-      const router = inject(Router);
-      await firstValueFrom(auth.verifyAuth());
-      await router.initialNavigation();
-    }),
+    // Restore the session BEFORE the first navigation (see restoreSessionThenNavigate).
+    provideAppInitializer(() => restoreSessionThenNavigate(inject(AuthService), inject(Router))),
   ],
 };

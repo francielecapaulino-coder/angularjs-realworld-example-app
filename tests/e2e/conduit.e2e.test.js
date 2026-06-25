@@ -203,8 +203,18 @@ async function setupApiMocks(page) {
 }
 
 /**
- * Sets the fictitious JWT token in localStorage BEFORE any page script runs,
- * so the Angular app boots already authenticated (verifyAuth populates the user).
+ * Pre-establishes an authenticated session WITHOUT logging in through the UI.
+ *
+ * The session is seeded by writing the fictitious JWT to localStorage (key
+ * 'jwtToken') via addInitScript, which runs BEFORE any page script. This is the
+ * localStorage equivalent of Playwright's `storageState` (this app stores the JWT
+ * in localStorage, not a cookie). On boot the app's verifyAuth then validates the
+ * token against the mocked GET /user, so the app starts already authenticated.
+ *
+ * POLICY: direct-access and refresh tests on guarded routes MUST use this helper
+ * (a pre-configured session) and MUST NOT log in via the UI — they have to
+ * validate exactly the "session already established + direct navigation/refresh"
+ * scenario that the original guard-race bug broke.
  *
  * @param {import('@playwright/test').Page} page
  */
@@ -212,7 +222,7 @@ async function injectFakeTokenBeforeLoad(page) {
   await page.addInitScript((token) => {
     try {
       localStorage.setItem('jwtToken', token);
-    } catch (_) { /* localStorage unavailable before first load — ignored */ }
+    } catch (_) { /* localStorage unavailable before first load - ignored */ }
   }, FAKE_TOKEN);
 }
 
@@ -509,5 +519,286 @@ test.describe('Settings — authenticated', () => {
     await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
     const storedToken = await page.evaluate(() => localStorage.getItem('jwtToken'));
     expect(storedToken).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 11 — Bootstrap loading state
+//
+// When verifyAuth makes a network call (token present), the APP_INITIALIZER
+// blocks bootstrap until GET /user resolves. The static loading spinner inside
+// <app-root> (index.html) must be visible during that window and disappear once
+// the app renders. We DELAY GET /user to make the window observable.
+// ---------------------------------------------------------------------------
+
+test.describe('Bootstrap loading state', () => {
+  test('shows the loading spinner during bootstrap, then removes it after render', async ({ page }) => {
+    // Custom mocks: same as setupApiMocks but with a delayed GET /user.
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      const method = route.request().method();
+
+      if (method === 'GET' && url.endsWith('/user')) {
+        // Delay the session-restore response so the bootstrap loader is observable.
+        await new Promise((r) => setTimeout(r, 1500));
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: MOCK_USER }) });
+      }
+      if (method === 'GET' && url.includes('/articles')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }) });
+      }
+      if (method === 'GET' && url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) });
+    });
+
+    await injectFakeTokenBeforeLoad(page);
+
+    // Start navigation but don't await full load — the loader should be up while
+    // GET /user is in flight (bootstrap blocked by APP_INITIALIZER).
+    await page.goto('/', { waitUntil: 'commit' });
+    await expect(page.locator('.app-loading')).toBeVisible({ timeout: 5000 });
+
+    // Once the delayed GET /user resolves and the app renders, the loader is gone.
+    await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.app-loading')).toHaveCount(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 12 — verifyAuth failure during bootstrap
+//
+// If session restore (GET /user) fails (e.g. expired token or a network error),
+// the app must end up logged out and route guards must redirect cleanly to /login
+// for protected routes — never hang on the loading spinner.
+// ---------------------------------------------------------------------------
+
+test.describe('verifyAuth failure on bootstrap', () => {
+  test('network error on GET /user during a guarded-route visit redirects to /login', async ({ page }) => {
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      if (route.request().method() === 'GET' && url.endsWith('/user')) {
+        return route.abort('failed'); // simulated network failure during session restore
+      }
+      if (url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }) });
+    });
+
+    // Boot with a (now invalid) token, navigating straight to a guarded route.
+    await injectFakeTokenBeforeLoad(page);
+    await page.goto('/settings');
+
+    // verifyAuth fails -> session purged -> guard redirects to /login (no hang).
+    await expect(page).toHaveURL(/\/login$/, { timeout: 10000 });
+    await expect(page.locator('input[placeholder="Email"]')).toBeVisible();
+    const storedToken = await page.evaluate(() => localStorage.getItem('jwtToken'));
+    expect(storedToken).toBeNull(); // token cleared on failed restore
+  });
+
+  test('expired token (401) on GET /user redirects to /login and clears the token', async ({ page }) => {
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      if (route.request().method() === 'GET' && url.endsWith('/user')) {
+        return route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ errors: { message: 'Unauthorized' } }) });
+      }
+      if (url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }) });
+    });
+
+    await injectFakeTokenBeforeLoad(page);
+    await page.goto('/editor');
+
+    await expect(page).toHaveURL(/\/login$/, { timeout: 10000 });
+    const storedToken = await page.evaluate(() => localStorage.getItem('jwtToken'));
+    expect(storedToken).toBeNull();
+  });
+
+  test('hung GET /user does NOT freeze the app: it times out and redirects to /login', async ({ page }) => {
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      if (route.request().method() === 'GET' && url.endsWith('/user')) {
+        // Never fulfilled within the app's verifyAuth timeout window -> app must
+        // not hang; the timeout settles the stream and the guard redirects.
+        return; // leave the request hanging
+      }
+      if (url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }) });
+    });
+
+    await injectFakeTokenBeforeLoad(page);
+    await page.goto('/settings');
+
+    // VERIFY_AUTH_TIMEOUT_MS is 8000ms; allow margin so the timeout fires.
+    await expect(page).toHaveURL(/\/login$/, { timeout: 15000 });
+    await expect(page.locator('input[placeholder="Email"]')).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 13 — Login validation errors (negative auth)
+// ---------------------------------------------------------------------------
+
+test.describe('Login validation errors', () => {
+  test('invalid credentials (422) show the API error messages', async ({ page }) => {
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      if (route.request().method() === 'POST' && url.endsWith('/users/login')) {
+        return route.fulfill({
+          status: 422,
+          contentType: 'application/json',
+          body: JSON.stringify({ errors: { 'email or password': ['is invalid'] } }),
+        });
+      }
+      if (url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: [], articlesCount: 0 }) });
+    });
+
+    await page.goto('/login');
+    await page.fill('input[placeholder="Email"]', 'test-e2e@example.test');
+    await page.fill('input[placeholder="Password"]', 'wrong-not-real');
+    await page.click('button.btn-primary');
+
+    await expect(page.locator('.error-messages li')).toContainText('is invalid', { timeout: 10000 });
+    // Still on the login page (no navigation on failure).
+    await expect(page).toHaveURL(/\/login$/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 14 — Authenticated home feed tabs (Your Feed / Global Feed)
+// ---------------------------------------------------------------------------
+
+test.describe('Home feed tabs — authenticated', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    await injectFakeTokenBeforeLoad(page);
+  });
+
+  test('authenticated home shows Your Feed and Global Feed tabs', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.feed-toggle')).toContainText('Your Feed');
+    await expect(page.locator('.feed-toggle')).toContainText('Global Feed');
+    // Switching to Global Feed keeps article previews visible.
+    await page.locator('.feed-toggle .nav-link', { hasText: 'Global Feed' }).click();
+    await expect(page.locator('.article-preview').first()).toBeVisible({ timeout: 5000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 15 — Settings update (PUT /user) navigates to the profile
+// ---------------------------------------------------------------------------
+
+test.describe('Settings update — authenticated', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    await injectFakeTokenBeforeLoad(page);
+  });
+
+  test('updating settings PUTs /user and navigates to the profile page', async ({ page }) => {
+    await page.goto('/settings');
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 10000 });
+    await page.fill('textarea[placeholder="Short bio about you"]', 'Updated bio via E2E');
+    await page.click('button.btn-primary');
+    // setupApiMocks returns MOCK_USER (username e2e-user) for PUT /user.
+    await expect(page).toHaveURL(/\/profile\/e2e-user$/, { timeout: 10000 });
+    await expect(page.locator('.profile-page')).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 16 — Author actions on the article page (Edit / Delete)
+//
+// When the logged-in user IS the article author, article-actions shows
+// Edit/Delete instead of Follow/Favorite. Deleting routes back home.
+// ---------------------------------------------------------------------------
+
+test.describe('Article author actions — authenticated', () => {
+  test.beforeEach(async ({ page }) => {
+    // GET /user returns a user matching the article author (demo-author),
+    // so the author branch of article-actions renders.
+    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+      const url = route.request().url();
+      const method = route.request().method();
+      if (method === 'GET' && url.endsWith('/user')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { ...MOCK_USER, username: 'demo-author' } }) });
+      }
+      if (method === 'DELETE' && url.match(/\/articles\/[^/]+$/)) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) });
+      }
+      if (method === 'GET' && url.match(/\/articles\/[^/]+\/comments$/)) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ comments: MOCK_COMMENTS }) });
+      }
+      if (method === 'GET' && url.match(/\/articles\/[^/]+$/) && !url.includes('/feed')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ article: MOCK_ARTICLES[0] }) });
+      }
+      if (url.includes('/tags')) {
+        return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tags: MOCK_TAGS }) });
+      }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ articles: MOCK_ARTICLES, articlesCount: MOCK_ARTICLES.length }) });
+    });
+    await injectFakeTokenBeforeLoad(page);
+  });
+
+  test('author sees Edit and Delete on the article page', async ({ page }) => {
+    await page.goto('/article/e2e-test-article-001');
+    await expect(page.locator('.article-page')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.article-page')).toContainText('Edit Article');
+    await expect(page.locator('.article-page')).toContainText('Delete Article');
+    // The non-author Follow button must NOT be present.
+    await expect(page.locator('.article-page app-follow-button')).toHaveCount(0);
+  });
+
+  test('deleting the article routes back to the home page', async ({ page }) => {
+    await page.goto('/article/e2e-test-article-001');
+    await expect(page.locator('.article-page')).toBeVisible({ timeout: 10000 });
+    await page.locator('button.btn-outline-danger', { hasText: 'Delete Article' }).first().click();
+    await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Suite 17 — Guarded routes survive a REFRESH while authenticated (regression)
+//
+// Reproduces the ORIGINAL BUG (slice 013): a logged-in user who refreshes (or
+// directly navigates to) a guarded route was wrongly bounced to /login because
+// the route guard raced the async verifyAuth. Fixed via APP_INITIALIZER +
+// withDisabledInitialNavigation. These tests MUST be kept as the regression net:
+// if the race returns, the guard redirects to /login and these fail.
+// ---------------------------------------------------------------------------
+
+test.describe('Guarded routes survive refresh — authenticated (regression)', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    await injectFakeTokenBeforeLoad(page);
+  });
+
+  test('/editor stays rendered after a page refresh (no bounce to /login)', async ({ page }) => {
+    await page.goto('/editor');
+    await expect(page.locator('input[placeholder="Article Title"]')).toBeVisible({ timeout: 10000 });
+
+    await page.reload();
+
+    // Still on /editor with the form — NOT redirected to /login.
+    await expect(page).toHaveURL(/\/editor$/, { timeout: 10000 });
+    await expect(page.locator('input[placeholder="Article Title"]')).toBeVisible();
+  });
+
+  test('/settings stays rendered after a page refresh (no bounce to /login)', async ({ page }) => {
+    await page.goto('/settings');
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 10000 });
+
+    await page.reload();
+
+    await expect(page).toHaveURL(/\/settings$/, { timeout: 10000 });
+    await expect(page.locator('.settings-page')).toBeVisible();
   });
 });
