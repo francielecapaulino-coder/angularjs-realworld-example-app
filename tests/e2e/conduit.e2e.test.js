@@ -669,3 +669,41 @@ test.describe('Article author actions — authenticated', () => {
     await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Suite 17 — Guarded routes survive a REFRESH while authenticated (regression)
+//
+// Reproduces the ORIGINAL BUG (slice 013): a logged-in user who refreshes (or
+// directly navigates to) a guarded route was wrongly bounced to /login because
+// the route guard raced the async verifyAuth. Fixed via APP_INITIALIZER +
+// withDisabledInitialNavigation. These tests MUST be kept as the regression net:
+// if the race returns, the guard redirects to /login and these fail.
+// ---------------------------------------------------------------------------
+
+test.describe('Guarded routes survive refresh — authenticated (regression)', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+    await injectFakeTokenBeforeLoad(page);
+  });
+
+  test('/editor stays rendered after a page refresh (no bounce to /login)', async ({ page }) => {
+    await page.goto('/editor');
+    await expect(page.locator('input[placeholder="Article Title"]')).toBeVisible({ timeout: 10000 });
+
+    await page.reload();
+
+    // Still on /editor with the form — NOT redirected to /login.
+    await expect(page).toHaveURL(/\/editor$/, { timeout: 10000 });
+    await expect(page.locator('input[placeholder="Article Title"]')).toBeVisible();
+  });
+
+  test('/settings stays rendered after a page refresh (no bounce to /login)', async ({ page }) => {
+    await page.goto('/settings');
+    await expect(page.locator('.settings-page')).toBeVisible({ timeout: 10000 });
+
+    await page.reload();
+
+    await expect(page).toHaveURL(/\/settings$/, { timeout: 10000 });
+    await expect(page.locator('.settings-page')).toBeVisible();
+  });
+});
