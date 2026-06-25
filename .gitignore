@@ -36,7 +36,7 @@ node_modules
 
 build/*
 dist/*
-src/js/config/app.templates.js
+legacy/src/js/config/app.templates.js
 
 # Playwright
 test-results/
