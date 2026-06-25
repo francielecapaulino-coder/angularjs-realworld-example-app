@@ -5,7 +5,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { EditorComponent } from './editor.component';
+import { EditorComponent, EDITOR_DRAFT_KEY } from './editor.component';
 import { APP_CONSTANTS } from '../../core/config/app.constants';
 
 function setup(slug?: string) {
@@ -127,6 +127,70 @@ describe('EditorComponent', () => {
     expect(ed.errors()).toEqual({ title: ["can't be blank"] });
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain("can't be blank");
+    httpMock.verify();
+  });
+
+  // --- Draft autosave (slice 021) ---------------------------------------------
+
+  it('autosaves the draft to localStorage when tags change (new-article mode)', () => {
+    const { fixture, httpMock } = setup();
+    fixture.detectChanges(); // ngOnInit -> ready = true
+    const ed = fixture.componentInstance;
+
+    ed.tagList.set(['ng', 'rxjs']);
+    fixture.detectChanges(); // flush the autosave effect
+    const raw = localStorage.getItem(EDITOR_DRAFT_KEY);
+    expect(raw).toBeTruthy();
+    expect(JSON.parse(raw!).tagList).toEqual(['ng', 'rxjs']);
+    httpMock.verify();
+  });
+
+  it('restores a saved draft into the form and tags on init (new-article mode)', () => {
+    localStorage.setItem(
+      EDITOR_DRAFT_KEY,
+      JSON.stringify({ title: 'Draft T', description: 'Draft D', body: 'Draft B', tagList: ['z'] }),
+    );
+    const { fixture, httpMock } = setup();
+    fixture.detectChanges();
+    const ed = fixture.componentInstance;
+
+    expect(ed.form.getRawValue()).toEqual({ title: 'Draft T', description: 'Draft D', body: 'Draft B' });
+    expect(ed.tagList()).toEqual(['z']);
+    httpMock.verify();
+  });
+
+  it('does NOT restore a draft in edit mode (slug present)', () => {
+    localStorage.setItem(
+      EDITOR_DRAFT_KEY,
+      JSON.stringify({ title: 'Draft T', description: 'D', body: 'B', tagList: ['z'] }),
+    );
+    const { fixture, httpMock } = setup('a-1');
+    fixture.detectChanges();
+    httpMock.expectOne(`${APP_CONSTANTS.apiBase}/articles/a-1`).flush({ article: ARTICLE });
+
+    const ed = fixture.componentInstance;
+    // Form reflects the fetched article, not the draft.
+    expect(ed.form.getRawValue().title).toBe('Existing');
+    expect(ed.tagList()).toEqual(['x', 'y']);
+    httpMock.verify();
+  });
+
+  it('clears the draft after a successful submit', () => {
+    localStorage.setItem(
+      EDITOR_DRAFT_KEY,
+      JSON.stringify({ title: 'New', description: 'D', body: 'B', tagList: ['t'] }),
+    );
+    const { fixture, httpMock } = setup();
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    fixture.detectChanges();
+    const ed = fixture.componentInstance;
+
+    ed.submit();
+    httpMock
+      .expectOne(`${APP_CONSTANTS.apiBase}/articles`)
+      .flush({ article: { ...ARTICLE, slug: 'new-slug' } });
+
+    expect(localStorage.getItem(EDITOR_DRAFT_KEY)).toBeNull();
     httpMock.verify();
   });
 });
