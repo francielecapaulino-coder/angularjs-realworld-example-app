@@ -1,0 +1,70 @@
+name: CI
+
+# Validation-only CI for the Angular 21 app (app-ng).
+# Runs the safety nets (build + unit + contract + E2E) on every push and PR.
+# No deploy step yet (that is a future slice once a hosting target is chosen).
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# Avoid redundant runs on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Build & test (Node 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            app-ng/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install app-ng dependencies
+        run: npm ci
+        working-directory: app-ng
+
+      - name: Build (app-ng)
+        run: npm run build --prefix app-ng
+
+      - name: Unit tests (Vitest)
+        run: CI=true npm test --prefix app-ng
+
+      - name: Contract tests (OpenAPI)
+        run: npm run test:contract
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests (Playwright)
+        # The Playwright config builds app-ng (pretest) and serves it on :4100.
+        run: npx playwright test
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore

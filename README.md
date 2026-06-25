@@ -43,6 +43,20 @@ npm run test:contract
 npm run test:e2e
 ```
 
+# Continuous Integration
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and pull
+request to `master`. On Node 22 it builds the Angular app and runs all safety nets:
+
+- **build** (`app-ng`)
+- **unit tests** (Vitest)
+- **contract tests** (OpenAPI)
+- **end-to-end tests** (Playwright; serves the built SPA on port 4100)
+
+On failure, the Playwright HTML report is uploaded as a build artifact. There is no
+deploy step yet - a hosting target (GitHub Pages / Netlify / Vercel) will be added in
+a follow-up.
+
 ### Making requests to the backend API
 
 For convenience, there is a live API server at https://conduit.productionready.io/api
