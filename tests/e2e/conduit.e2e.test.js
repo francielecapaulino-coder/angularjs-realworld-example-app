@@ -203,8 +203,18 @@ async function setupApiMocks(page) {
 }
 
 /**
- * Sets the fictitious JWT token in localStorage BEFORE any page script runs,
- * so the Angular app boots already authenticated (verifyAuth populates the user).
+ * Pre-establishes an authenticated session WITHOUT logging in through the UI.
+ *
+ * The session is seeded by writing the fictitious JWT to localStorage (key
+ * 'jwtToken') via addInitScript, which runs BEFORE any page script. This is the
+ * localStorage equivalent of Playwright's `storageState` (this app stores the JWT
+ * in localStorage, not a cookie). On boot the app's verifyAuth then validates the
+ * token against the mocked GET /user, so the app starts already authenticated.
+ *
+ * POLICY: direct-access and refresh tests on guarded routes MUST use this helper
+ * (a pre-configured session) and MUST NOT log in via the UI — they have to
+ * validate exactly the "session already established + direct navigation/refresh"
+ * scenario that the original guard-race bug broke.
  *
  * @param {import('@playwright/test').Page} page
  */
@@ -212,7 +222,7 @@ async function injectFakeTokenBeforeLoad(page) {
   await page.addInitScript((token) => {
     try {
       localStorage.setItem('jwtToken', token);
-    } catch (_) { /* localStorage unavailable before first load — ignored */ }
+    } catch (_) { /* localStorage unavailable before first load - ignored */ }
   }, FAKE_TOKEN);
 }
 
