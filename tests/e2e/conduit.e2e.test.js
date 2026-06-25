@@ -802,3 +802,42 @@ test.describe('Guarded routes survive refresh — authenticated (regression)', (
     await expect(page.locator('.settings-page')).toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Suite 18 — Dark mode toggle (slice 020)
+//
+// The header exposes a theme toggle. It must flip data-theme on <html>, and the
+// choice must survive a page refresh (persisted in localStorage 'conduit-theme').
+// ---------------------------------------------------------------------------
+
+test.describe('Dark mode toggle', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupApiMocks(page);
+  });
+
+  test('toggles data-theme and persists the choice across a refresh', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.home-page')).toBeVisible({ timeout: 10000 });
+
+    const html = page.locator('html');
+    const toggle = page.locator('button.theme-toggle');
+    await expect(toggle).toBeVisible();
+
+    // Default is light (the test browser does not prefer dark).
+    await expect(html).toHaveAttribute('data-theme', 'light');
+
+    // Toggle -> dark, and the choice is persisted.
+    await toggle.click();
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+    const stored = await page.evaluate(() => localStorage.getItem('conduit-theme'));
+    expect(stored).toBe('dark');
+
+    // Dark survives a refresh (anti-FOUC script + ThemeService re-read).
+    await page.reload();
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+
+    // Toggle back -> light.
+    await page.locator('button.theme-toggle').click();
+    await expect(html).toHaveAttribute('data-theme', 'light');
+  });
+});

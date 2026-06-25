@@ -6,6 +6,24 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!--
+    Anti-FOUC theme bootstrap. Applies data-theme on <html> BEFORE the stylesheets
+    load, so dark mode never flashes light on first paint. Mirrors ThemeService's
+    resolution: explicit choice in localStorage ('conduit-theme'), else OS preference.
+  -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('conduit-theme');
+        var theme = (stored === 'light' || stored === 'dark')
+          ? stored
+          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
   <!-- Conduit design system (preserved from legacy src/index.html) -->
   <link href="//code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" rel="stylesheet" type="text/css">
   <link href="//fonts.googleapis.com/css?family=Titillium+Web:700|Source+Serif+Pro:400,700|Merriweather+Sans:400,700|Source+Sans+Pro:400,300,600,700,300italic,400italic,600italic,700italic" rel="stylesheet" type="text/css">
@@ -26,6 +44,9 @@
       justify-content: center;
       background: #fff;
       z-index: 9999;
+    }
+    :root[data-theme='dark'] .app-loading {
+      background: #0f1418;
     }
     .app-loading__spinner {
       width: 48px;
