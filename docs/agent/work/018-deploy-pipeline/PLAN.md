@@ -1,12 +1,13 @@
 # PLAN — 018-deploy-pipeline
 
 ## Status
-State: PLANNED (aguardando decisão do alvo de hospedagem)
+State: IN PROGRESS — escopo reduzido a **CI de validação** (sem deploy), por decisão do usuário.
 
 ## Objetivo
-Criar uma pipeline de CI/CD que valide e publique o app-ng (Angular 21 SPA) a cada
-push na branch principal, com as redes de segurança (unit, contract, E2E) como
-gate antes do deploy. Não há CI/CD hoje; o app-ng é a aplicação oficial.
+Criar um workflow de **CI de validação** que rode as redes de segurança (build, unit,
+contract, E2E) a cada push/PR. **Sem etapa de deploy** por enquanto (sem secrets, sem
+publicação) — o deploy fica para uma slice futura quando o alvo for escolhido.
+Não há CI/CD hoje; o app-ng é a aplicação oficial.
 
 ## Fatos da auditoria (estado atual)
 - app-ng é **SPA puro** (history API; sem SSR — não há `server.ts`/`main.server.ts`;
@@ -40,35 +41,37 @@ gate antes do deploy. Não há CI/CD hoje; o app-ng é a aplicação oficial.
 
 Recomendação padrão (sem serviço externo): **A) GitHub Pages**.
 
-## Escopo (após a decisão)
+## Escopo — CI de validação (decisão do usuário)
 - Incluído:
-  - `.github/workflows/ci.yml`: em PR e push — `npm ci` (raiz e app-ng), `build`,
-    `test:unit`, `test:contract`, `test:e2e` (Playwright headless; instalar browsers).
-  - `.github/workflows/deploy.yml` (ou job de deploy no ci): só na branch principal,
-    após o gate, publica o `browser/` no alvo escolhido.
-  - Tratamento do fallback SPA conforme o host (Pages: gerar `404.html`; Netlify/Vercel/CF:
-    arquivo de config) e do `baseHref` (se Pages project site).
-  - README: seção "Deploy" documentando o fluxo e a URL pública.
-- Fora de escopo:
-  - SSR/prerender (o app é SPA; pode ser slice futura se desejado).
-  - Mudanças no código do app-ng além de `index.html`/config de build estritamente necessárias.
+  - `.github/workflows/ci.yml`: em `push` e `pull_request` —
+    - setup Node 22 (com cache npm),
+    - `npm ci` na raiz e em `app-ng`,
+    - `npm run build` (app-ng),
+    - `npm run test:unit` (Vitest 93),
+    - `npm run test:contract` (Jest/OpenAPI 11),
+    - `npx playwright install --with-deps chromium` + `npm run test:e2e` (Playwright 37),
+    - upload do `playwright-report` como artefato em falha.
+  - README: seção "CI" documentando o que roda.
+- Fora de escopo (slice futura):
+  - Etapa de **deploy** e escolha do host (Pages/Netlify/Vercel/Cloudflare), com fallback SPA,
+    baseHref e secrets. (Opções A–D acima preservadas para a slice de deploy.)
+  - SSR/prerender.
+  - Mudanças no código do app-ng.
 
 ## Operational path & risk
-- risk_category: C  # cria pipeline de publicação (entrega ao público) + usa secrets de deploy.
-- operational_path: strict_path_C_D
-- human_review: required
+- risk_category: B  # CI de validação aditivo; sem deploy, sem secrets, reversível.
+- operational_path: standard_path_B
+- human_review: optional
 
-## Deterministic gates (quando implementado)
-- build: `npm run build` verde no CI.
-- unit_tests / contract_tests / e2e_tests: verdes no CI antes do deploy.
-- secret_scan: nenhum segredo no repo; tokens só em GitHub Secrets.
-- config_review: deploy só na branch principal; fallback SPA + baseHref corretos para o host.
+## Deterministic gates
+- config_review: workflow roda em push/PR; usa scripts já existentes; sem secrets; sem deploy.
+- (validação local antes do commit) build + unit + contract + e2e verdes localmente.
+- secret_scan: nenhum segredo no workflow.
 
 ## Condições de parada
-- Se o deploy exigir credenciais/serviço que o usuário não quer configurar, parar e ajustar o alvo.
-- Se o E2E for instável no CI, estabilizar (workers=1, retries) antes de habilitar o deploy.
+- Se o E2E for instável no CI, estabilizar (workers=1, retries) — config já tem workers=1.
+- Não adicionar etapa de deploy nesta slice (decidido CI-only).
 
 ## Pendências / decisão
-- **DECISÃO NECESSÁRIA:** escolher o alvo de hospedagem (A/B/C/D). O restante do plano
-  (fallback, baseHref, secrets) deriva dessa escolha.
-- Confirmar o nome da branch principal (atual: `master`).
+- Branch principal: `master` (confirmado pelo repo).
+- Deploy fica para a slice futura (alvo a escolher).
