@@ -1,7 +1,8 @@
 name: CI
 
-# Validation-only CI for the Angular 21 app (app-ng).
-# Runs the safety nets (build + unit + contract + E2E) on every push and PR.
+# Validation CI for the monorepo:
+#  - `validate`: Angular 21 app (app-ng) safety nets (build + unit + contract + E2E).
+#  - `backend`: Spring Boot API (api/) build + tests on JDK 21 with a Postgres service.
 # No deploy step yet (that is a future slice once a hosting target is chosen).
 
 on:
@@ -68,3 +69,46 @@ jobs:
           path: playwright-report/
           retention-days: 7
           if-no-files-found: ignore
+
+  backend:
+    name: Backend build & test (JDK 21)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # Postgres for the Spring Data JPA context (the app uses PostgreSQL).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: conduit
+          POSTGRES_USER: conduit
+          POSTGRES_PASSWORD: conduit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U conduit"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Spring relaxed binding picks these up; the skeleton has no datasource in
+      # application.properties, so we provide it here for the @SpringBootTest context.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/conduit
+      SPRING_DATASOURCE_USERNAME: conduit
+      SPRING_DATASOURCE_PASSWORD: conduit
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Build & test (Maven)
+        working-directory: api
+        run: ./mvnw -B verify

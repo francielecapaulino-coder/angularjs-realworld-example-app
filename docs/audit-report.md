@@ -97,3 +97,15 @@ observabilidade que nao faz parte deste workspace:
 - **#20** Traces distribuidos no Tempo/Grafana.
 - **#21** Script Python de validacao up/down.
 - Parte de **backend** dos itens **#8** (rastreabilidade) e **#13** (Pitest).
+
+## Atualizacao pos-decisao de escopo (slice 023+)
+
+> **Mudanca de escopo (2026-06-25):** o usuario decidiu **trazer o backend Spring Boot
+> para este repositorio** (monorepo) em vez de mante-lo separado. Portanto, os itens
+> **#15-#21** e a parte de backend de **#8/#13** deixam de ser "fora de escopo" e passam a
+> ser **pendencias planejadas**, a serem implementadas nas slices **024-029** (ver o plano
+> macro em `docs/agent/work/_fullscope-plan/PLAN.md`).
+>
+> - **Slice 023 (esta):** backend integrado via `git subtree` em `api/` (historico preservado)
+>   + job de CI `backend` (JDK 21 + Postgres). Os itens de infra/observabilidade seguem
+>   **❌ Nao feito** ate as slices seguintes os enderecarem.
