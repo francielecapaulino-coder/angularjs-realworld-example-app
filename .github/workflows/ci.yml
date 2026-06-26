@@ -2,7 +2,7 @@ name: CI
 
 # Validation CI for the monorepo:
 #  - `validate`: Angular 21 app (app-ng) safety nets (build + unit + contract + E2E).
-#  - `backend`: Spring Boot API (api/) build + tests on JDK 21 with a Postgres service.
+#  - `backend`: Spring Boot API (api/) build + tests on JDK 25 (Gradle) with a Postgres service.
 # No deploy step yet (that is a future slice once a hosting target is chosen).
 
 on:
@@ -71,7 +71,7 @@ jobs:
           if-no-files-found: ignore
 
   backend:
-    name: Backend build & test (JDK 21)
+    name: Backend build & test (JDK 25)
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -102,13 +102,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup JDK 21
+      - name: Setup JDK 25
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
-          cache: maven
+          java-version: 25
+          cache: gradle
 
-      - name: Build & test (Maven)
+      - name: Build & test (Gradle)
         working-directory: api
-        run: ./mvnw -B verify
+        run: ./gradlew build --no-daemon

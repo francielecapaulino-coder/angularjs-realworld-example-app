@@ -5,7 +5,7 @@
 
 This repository was migrated from the original AngularJS 1.5 app to **Angular 21**.
 The official application now lives in **[`app-ng/`](app-ng/)**. The RealWorld **backend API**
-(Spring Boot 4 / Java 21 / Maven) was integrated via `git subtree` under **[`api/`](api/)**.
+(Spring Boot 4 / Java 25 / Gradle) was integrated via `git subtree` under **[`api/`](api/)**.
 The original AngularJS
 app is archived under **[`legacy/`](legacy/README.md)** for historical reference and is
 no longer built, served, or tested.
@@ -53,8 +53,8 @@ request to `master`, with two jobs:
 - **validate** (Node 22): builds the Angular app and runs the safety nets - build
   (`app-ng`), unit tests (Vitest), contract tests (OpenAPI), and end-to-end tests
   (Playwright; serves the built SPA on port 4100).
-- **backend** (JDK 21): builds and tests the Spring Boot API (`api/`) via
-  `./mvnw -B verify`, with a Postgres service for the JPA context.
+- **backend** (JDK 25): builds and tests the Spring Boot API (`api/`) via
+  `./gradlew build`, with a Postgres service for the JPA context.
 
 On failure, the Playwright HTML report is uploaded as a build artifact. There is no
 deploy step yet - a hosting target (GitHub Pages / Netlify / Vercel) will be added in

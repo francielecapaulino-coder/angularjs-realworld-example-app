@@ -16,8 +16,10 @@
 ## Decisoes tomadas
 
 - Abordagem: **git subtree** em `api/`, **sem --squash** (historico preservado).
-- CI: job `backend` (JDK 21 + Postgres service) rodando `./mvnw -B verify`.
-- Validacao do backend ocorre no CI (Java local = 11; backend exige 21).
+- Durante a slice o backend foi reconstruido no upstream (Gradle / Java 25 / Spring Boot 4.0.3);
+  tracei via `git subtree pull` e ajustei o CI.
+- CI: job `backend` (JDK 25 + Gradle + Postgres service) rodando `./gradlew build`.
+- Validacao do backend ocorre no CI (Java local = 11).
 
 ## Skills necessarias
 

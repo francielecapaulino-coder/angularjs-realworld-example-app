@@ -12,7 +12,7 @@ Trazer o backend Spring Boot (RealWorld API) para este monorepo em `api/` via gi
 
 ## Escopo
 - Incluido: `git subtree add --prefix=api backend main` (historico preservado);
-  job de CI `backend` (JDK 21 + Postgres) com `./mvnw -B verify`; README + docs.
+  job de CI `backend` (JDK 25 + Postgres) com `./gradlew build`; README + docs.
 - Fora de escopo: app-ng apontar para a API (024); Docker/compose (025); observabilidade (026/027).
 
 ## Operational path & risk
@@ -21,7 +21,7 @@ Trazer o backend Spring Boot (RealWorld API) para este monorepo em `api/` via gi
 
 ## Gates
 - config_review: YAML valido; subtree com historico preservado.
-- backend build/test: CI (JDK 21 + Postgres) verde.
+- backend build/test: CI (JDK 25 + Gradle + Postgres) verde.
 - frontend: job `validate` permanece verde.
 
 ## Condicoes de parada

@@ -106,6 +106,7 @@ observabilidade que nao faz parte deste workspace:
 > ser **pendencias planejadas**, a serem implementadas nas slices **024-029** (ver o plano
 > macro em `docs/agent/work/_fullscope-plan/PLAN.md`).
 >
-> - **Slice 023 (esta):** backend integrado via `git subtree` em `api/` (historico preservado)
->   + job de CI `backend` (JDK 21 + Postgres). Os itens de infra/observabilidade seguem
+> - **Slice 023 (esta):** backend integrado via `git subtree` em `api/` (historico preservado;
+>   stack apos pull do upstream: Gradle / Java 25 / Spring Boot 4.0.3) + job de CI `backend`
+>   (JDK 25 + Gradle + Postgres). Os itens de infra/observabilidade seguem
 >   **❌ Nao feito** ate as slices seguintes os enderecarem.
