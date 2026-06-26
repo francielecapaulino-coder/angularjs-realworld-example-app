@@ -1,0 +1,8 @@
+{
+  "_comment": "Dev proxy for `ng serve`: forwards /api to the local Spring Boot backend (slice 024). In prod/docker, nginx handles this proxying instead (slice 025).",
+  "/api": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true
+  }
+}
