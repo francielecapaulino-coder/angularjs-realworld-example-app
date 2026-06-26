@@ -143,6 +143,8 @@ skills documentadas, `docs/audit-report.md` atualizado ao final, e CI verde.
 - **Spring Boot 4.0.3**, **Java 25**, **Gradle** (wrapper **9.5.1**; requisito do projeto: Gradle
   9.3.1+), `io.spring.dependency-management 1.1.7`.
 - Dependencias: data-jpa, security, webmvc, validation, **PostgreSQL**.
+- **Persistencia: JPA/Hibernate** (`spring-boot-starter-data-jpa`) desde o inicio; **nao ha
+  MyBatis** no esqueleto -> **nenhuma migracao de ORM a fazer** (o projeto nasce direto em JPA).
 - `application.properties` define apenas `spring.application.name` -> **datasource via env**
   no compose (`SPRING_DATASOURCE_URL/USERNAME/PASSWORD`); porta default **8080**.
 - Nota historica: a inspecao inicial (esqueleto Maven / SB 4.1.0.RELEASE / Java 21) era invalida
