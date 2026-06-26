@@ -110,3 +110,7 @@ observabilidade que nao faz parte deste workspace:
 >   stack apos pull do upstream: Gradle / Java 25 / Spring Boot 4.0.3) + job de CI `backend`
 >   (JDK 25 + Gradle + Postgres). Os itens de infra/observabilidade seguem
 >   **❌ Nao feito** ate as slices seguintes os enderecarem.
+
+> - **Slice 024:** app-ng agora consome a API via caminho relativo `/api`
+>   (`app.constants.ts`) com dev proxy (`app-ng/proxy.conf.json` -> :8080); E2E migrado para
+>   mocks em `**/api/**`. Prepara o app para falar com o backend local (containerizacao na 025).

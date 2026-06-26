@@ -4,9 +4,9 @@
  * E2E tests — Conduit Angular 21 app (app-ng) — Fase 4 (corte/validação E2E)
  *
  * Targets the migrated Angular 21 SPA served from app-ng/dist/app-ng/browser
- * (clean URLs, history API). All HTTP calls to conduit.productionready.io are
- * intercepted via page.route() and return controlled mock responses.
- * No real credentials, no real API calls.
+ * (clean URLs, history API). All HTTP calls to the API (relative /api) are
+ * intercepted via a page.route glob on the /api path and return controlled mock
+ * responses. No real credentials, no real API calls.
  *
  * Fictitious data used throughout:
  *   - token: "fake-jwt-token-e2e-test-only"
@@ -87,7 +87,7 @@ const MOCK_COMMENTS = [
  * @param {import('@playwright/test').Page} page
  */
 async function setupApiMocks(page) {
-  const API_PATTERN = '**/conduit.productionready.io/api/**';
+  const API_PATTERN = '**/api/**';
 
   await page.route(API_PATTERN, async (route) => {
     const url = route.request().url();
@@ -534,7 +534,7 @@ test.describe('Settings — authenticated', () => {
 test.describe('Bootstrap loading state', () => {
   test('shows the loading spinner during bootstrap, then removes it after render', async ({ page }) => {
     // Custom mocks: same as setupApiMocks but with a delayed GET /user.
-    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+    await page.route('**/api/**', async (route) => {
       const url = route.request().url();
       const method = route.request().method();
 
@@ -575,7 +575,7 @@ test.describe('Bootstrap loading state', () => {
 
 test.describe('verifyAuth failure on bootstrap', () => {
   test('network error on GET /user during a guarded-route visit redirects to /login', async ({ page }) => {
-    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+    await page.route('**/api/**', async (route) => {
       const url = route.request().url();
       if (route.request().method() === 'GET' && url.endsWith('/user')) {
         return route.abort('failed'); // simulated network failure during session restore
@@ -598,7 +598,7 @@ test.describe('verifyAuth failure on bootstrap', () => {
   });
 
   test('expired token (401) on GET /user redirects to /login and clears the token', async ({ page }) => {
-    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+    await page.route('**/api/**', async (route) => {
       const url = route.request().url();
       if (route.request().method() === 'GET' && url.endsWith('/user')) {
         return route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ errors: { message: 'Unauthorized' } }) });
@@ -618,7 +618,7 @@ test.describe('verifyAuth failure on bootstrap', () => {
   });
 
   test('hung GET /user does NOT freeze the app: it times out and redirects to /login', async ({ page }) => {
-    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+    await page.route('**/api/**', async (route) => {
       const url = route.request().url();
       if (route.request().method() === 'GET' && url.endsWith('/user')) {
         // Never fulfilled within the app's verifyAuth timeout window -> app must
@@ -646,7 +646,7 @@ test.describe('verifyAuth failure on bootstrap', () => {
 
 test.describe('Login validation errors', () => {
   test('invalid credentials (422) show the API error messages', async ({ page }) => {
-    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+    await page.route('**/api/**', async (route) => {
       const url = route.request().url();
       if (route.request().method() === 'POST' && url.endsWith('/users/login')) {
         return route.fulfill({
@@ -725,7 +725,7 @@ test.describe('Article author actions — authenticated', () => {
   test.beforeEach(async ({ page }) => {
     // GET /user returns a user matching the article author (demo-author),
     // so the author branch of article-actions renders.
-    await page.route('**/conduit.productionready.io/api/**', async (route) => {
+    await page.route('**/api/**', async (route) => {
       const url = route.request().url();
       const method = route.request().method();
       if (method === 'GET' && url.endsWith('/user')) {

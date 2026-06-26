@@ -68,8 +68,10 @@ for the application to make requests against. You can view
 contains all routes & responses for the server. The source code for the backend server
 (Node, Rails, Django) is in the [main RealWorld repo](https://github.com/gothinkster/realworld).
 
-To point the app at a different API, edit `app-ng/src/app/core/config/app.constants.ts`
-and change `apiBase` (e.g. `http://localhost:3000/api`).
+The app calls the API via the relative path **`/api`** (see `app-ng/src/app/core/config/app.constants.ts`).
+In dev, `ng serve` proxies `/api` to the local backend (`app-ng/proxy.conf.json` -> http://localhost:8080).
+In prod/docker, nginx serves the SPA and proxies `/api` to the backend (added in a later slice).
+To target a different API, change `apiBase` or the proxy target.
 
 <br />
 
