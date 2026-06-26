@@ -114,3 +114,9 @@ observabilidade que nao faz parte deste workspace:
 > - **Slice 024:** app-ng agora consome a API via caminho relativo `/api`
 >   (`app.constants.ts`) com dev proxy (`app-ng/proxy.conf.json` -> :8080); E2E migrado para
 >   mocks em `**/api/**`. Prepara o app para falar com o backend local (containerizacao na 025).
+
+> - **Slice 025:** stack containerizada e orquestrada via `docker-compose.yml` (web/nginx +
+>   api/Spring Boot + db/Postgres). Validado localmente: `compose build` + `up` (db/api healthy,
+>   web up), app em `:8080` (HTTP 200), proxy `/api` -> backend (HTTP 401 do Spring Security,
+>   comprovando o roteamento), logs de startup capturados, `down -v` limpo. **Dockerfile(s) e
+>   docker-compose funcionais => requisito de infra atendido.**

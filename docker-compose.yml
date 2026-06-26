@@ -1,0 +1,59 @@
+# Containerized Conduit stack (slice 025): Angular SPA (nginx) + Spring Boot API + Postgres.
+#
+#   docker compose up --build      # build images and start the stack
+#   open http://localhost:8080     # the app (nginx serves the SPA, proxies /api -> api)
+#   docker compose down            # stop and remove containers
+#
+# The SPA calls the relative `/api` base (slice 024); nginx reverse-proxies it to
+# the `api` service over the internal network.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: conduit
+      POSTGRES_USER: conduit
+      POSTGRES_PASSWORD: conduit
+    # Not published to the host by default; reachable as `db` on the internal network.
+    expose:
+      - "5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conduit -d conduit"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/conduit
+      SPRING_DATASOURCE_USERNAME: conduit
+      SPRING_DATASOURCE_PASSWORD: conduit
+    # Exposed to the host for debugging / direct API smoke checks (slice 025a).
+    ports:
+      - "8081:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # No actuator yet: a TCP check on 8080 confirms the app is listening.
+      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  web:
+    build:
+      context: ./app-ng
+    # The app is served here; nginx proxies /api -> api:8080 internally.
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  db-data:

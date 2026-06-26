@@ -70,8 +70,25 @@ contains all routes & responses for the server. The source code for the backend 
 
 The app calls the API via the relative path **`/api`** (see `app-ng/src/app/core/config/app.constants.ts`).
 In dev, `ng serve` proxies `/api` to the local backend (`app-ng/proxy.conf.json` -> http://localhost:8080).
-In prod/docker, nginx serves the SPA and proxies `/api` to the backend (added in a later slice).
+In prod/docker, nginx serves the SPA and proxies `/api` to the backend (see below).
 To target a different API, change `apiBase` or the proxy target.
+
+### Running the full stack with Docker
+
+The whole stack (Angular SPA + Spring Boot API + Postgres) is containerized and
+orchestrated with `docker-compose.yml`:
+
+```bash
+docker compose up --build      # build images and start db + api + web
+# open http://localhost:8080    # the app (nginx serves the SPA, proxies /api -> api)
+docker compose down            # stop and remove containers (add -v to drop the db volume)
+```
+
+- **web** (nginx, host `:8080`): serves the prebuilt Angular bundle and reverse-proxies
+  `/api` to the backend over the internal network (`app-ng/Dockerfile`, `app-ng/nginx.conf`).
+- **api** (Spring Boot, host `:8081`): built from `api/Dockerfile` (Gradle/JDK 25 ->
+  JRE slim); reads its datasource from `SPRING_DATASOURCE_*` env vars.
+- **db** (Postgres 16): internal-only, seeded via `POSTGRES_*` (example credentials only).
 
 <br />
 
