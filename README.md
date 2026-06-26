@@ -90,6 +90,26 @@ docker compose down            # stop and remove containers (add -v to drop the 
   JRE slim); reads its datasource from `SPRING_DATASOURCE_*` env vars.
 - **db** (Postgres 16): internal-only, seeded via `POSTGRES_*` (example credentials only).
 
+### Real integration test (frontend <-> containerized backend)
+
+A dedicated layer exercises the **real** stack end-to-end (no network mocks):
+
+```bash
+npm run test:integration   # builds + starts the stack, runs the tests, tears it down
+```
+
+`scripts/run-integration.sh` brings the compose stack up, waits for the api healthcheck
+and the web to answer, then runs `tests/integration` via `playwright.integration.config.js`
+against `http://localhost:8080`, and always tears the stack down (even on failure).
+
+This is distinct from the other test layers:
+
+- `tests/contract` - static checks vs the OpenAPI spec / a public live API (not this backend).
+- `tests/e2e` - mocks the network (`page.route`) against a local SPA build (no real backend).
+- `tests/integration` - hits the **real** backend served by compose, directly (HTTP) and
+  through the nginx-served app. (The backend is currently a skeleton, so `/api/*` returns 401;
+  the tests assert the wiring is real and grow with the backend.)
+
 <br />
 
 [![Brought to you by Thinkster](https://raw.githubusercontent.com/gothinkster/realworld/master/media/end.png)](https://thinkster.io)

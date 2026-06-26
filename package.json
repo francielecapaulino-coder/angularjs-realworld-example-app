@@ -10,7 +10,8 @@
     "test:unit": "cd app-ng && CI=true npm test",
     "test:contract": "jest tests/contract/ --testTimeout=15000",
     "pretest:e2e": "npm run build",
-    "test:e2e": "npx playwright test"
+    "test:e2e": "npx playwright test",
+    "test:integration": "bash scripts/run-integration.sh"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",
