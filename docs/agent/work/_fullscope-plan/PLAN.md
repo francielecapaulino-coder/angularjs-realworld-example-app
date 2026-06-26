@@ -136,14 +136,17 @@ skills documentadas, `docs/audit-report.md` atualizado ao final, e CI verde.
 
 ---
 
-## 5. Backend confirmado (inspecao do repo)
+## 5. Backend confirmado (estado atual em `api/`, pos-023)
 
 - Repo: `github.com/francielecapaulino-coder/conduit-backend-api-angularjs-realworld-example-app`
   (publico), branch padrao **`main`**.
-- **Spring Boot 4.1.0**, **Java 21**, **Maven** (`mvnw`), artifact `com.conduit:conduit-backend-api`.
+- **Spring Boot 4.0.3**, **Java 25**, **Gradle** (wrapper **9.5.1**; requisito do projeto: Gradle
+  9.3.1+), `io.spring.dependency-management 1.1.7`.
 - Dependencias: data-jpa, security, webmvc, validation, **PostgreSQL**.
 - `application.properties` define apenas `spring.application.name` -> **datasource via env**
   no compose (`SPRING_DATASOURCE_URL/USERNAME/PASSWORD`); porta default **8080**.
+- Nota historica: a inspecao inicial (esqueleto Maven / SB 4.1.0.RELEASE / Java 21) era invalida
+  (versao de parent inexistente); o upstream reconstruiu para Gradle/Java 25/SB 4.0.3 durante a 023.
 
 ## 6. Decisoes — status
 
@@ -152,7 +155,7 @@ skills documentadas, `docs/audit-report.md` atualizado ao final, e CI verde.
 | 1 | URL/branch do backend | **OK** (`main`) |
 | 2 | Abordagem subtree | **OK** (aprovado) |
 | 3 | Diretorio `api/` | **OK** (aprovado) |
-| 4 | Build tool | **OK** — agora **Gradle/Java 25/Spring Boot 4.0.3** (upstream reconstruiu na 023) |
+| 4 | Build tool | **OK** — **Gradle 9.5.1** (req. 9.3.1+) / Java 25 / Spring Boot 4.0.3 (upstream reconstruiu na 023) |
 | 5 | Metricas Prometheus vs Mimir | **Pendente** (proposta: Prometheus) |
 | 6 | CI de integracao (compose no CI vs local) | **Pendente** (proposta: job dedicado/opcional) |
 | 7 | Pitest junto vs separado | **OK** — **separado** em 029b (Stryker fica em 029a) |
