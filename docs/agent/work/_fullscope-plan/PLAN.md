@@ -76,20 +76,27 @@ skills documentadas, `docs/audit-report.md` atualizado ao final, e CI verde.
 - Exit code 0 se tudo passou; mensagem de erro clara se algo faltou.
 - DoD: script executa e reporta saida; documentado em README.
 
-### Slice 029 — Stryker (subir score) + avaliar Pitest
-- Expandir `mutate` do Stryker alem do baseline; focar em matar sobreviventes de
-  `token.interceptor.ts` (62.50%) e `theme.service.ts` (82.22%).
+### Slice 029a — Stryker (frontend): subir score
+- **Issue propria.** Expandir `mutate` do Stryker alem do baseline; focar em matar
+  sobreviventes de `token.interceptor.ts` (62.50%) e `theme.service.ts` (82.22%).
 - Reportar o score REAL final (sem forcar 95%); documentar.
-- Avaliar/Configurar **Pitest** no backend Java (Maven/Gradle), medir e reportar.
-- DoD: scores reais documentados; CI verde.
+- DoD: score real documentado; CI verde.
+
+### Slice 029b — Pitest (backend): mutation testing Java
+- **Issue propria, separada da 029a** (decisao do usuario — toolchains distintas).
+- Configurar **Pitest** no backend (Gradle, plugin `info.solidsoft.pitest`), medir e
+  reportar o mutation score REAL do backend.
+- DoD: score real documentado; CI verde.
+- **Recorte exato (ordem/dependencia) a confirmar** com o usuario — proposta: 029a antes;
+  029b pode aguardar o backend ter endpoints reais para mutar algo significativo.
 
 ---
 
 ## 3. Estimativa
 
-- **Nucleo: 7 slices (023-029).**
-- Faixa realista: **7 a 9 slices** — 027 (observabilidade) pode dividir em logs/traces, e
-  029 pode separar Stryker de Pitest se o backend exigir toolchain propria.
+- **Nucleo: 8 slices** — 023, 024, 025, 026, 027, 028, **029a (Stryker)**, **029b (Pitest)**.
+- Faixa realista: **8 a 9 slices** — 027 (observabilidade) ainda pode dividir em logs/traces.
+- 029 foi **dividida em 029a (Stryker/frontend) e 029b (Pitest/backend)** — issues distintas.
 
 ---
 
@@ -121,12 +128,12 @@ skills documentadas, `docs/audit-report.md` atualizado ao final, e CI verde.
 | 1 | URL/branch do backend | **OK** (`main`) |
 | 2 | Abordagem subtree | **OK** (aprovado) |
 | 3 | Diretorio `api/` | **OK** (aprovado) |
-| 4 | Build tool | **OK** (Maven) |
+| 4 | Build tool | **OK** — agora **Gradle/Java 25/Spring Boot 4.0.3** (upstream reconstruiu na 023) |
 | 5 | Metricas Prometheus vs Mimir | **Pendente** (proposta: Prometheus) |
 | 6 | CI de integracao (compose no CI vs local) | **Pendente** (proposta: job dedicado/opcional) |
-| 7 | Pitest na 029 vs slice separada | **Pendente** (proposta: avaliar na 029; separar se exigir) |
+| 7 | Pitest junto vs separado | **OK** — **separado** em 029b (Stryker fica em 029a) |
 
-> 5/6/7 afetam as slices 026/027/029 — nao bloqueiam a 023. Podem ser decididos quando
+> 5/6 afetam as slices 026/027 — nao bloqueiam 024/025. Podem ser decididos quando
 > chegarmos nessas slices.
 
 ## 7. Riscos especificos do backend (a tratar na 023)
