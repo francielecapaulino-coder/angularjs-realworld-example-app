@@ -4,7 +4,9 @@
 > [RealWorld](https://github.com/gothinkster/realworld-example-apps) spec and API.
 
 This repository was migrated from the original AngularJS 1.5 app to **Angular 21**.
-The official application now lives in **[`app-ng/`](app-ng/)**. The original AngularJS
+The official application now lives in **[`app-ng/`](app-ng/)**. The RealWorld **backend API**
+(Spring Boot 4 / Java 25 / Gradle) was integrated via `git subtree` under **[`api/`](api/)**.
+The original AngularJS
 app is archived under **[`legacy/`](legacy/README.md)** for historical reference and is
 no longer built, served, or tested.
 
@@ -46,12 +48,13 @@ npm run test:e2e
 # Continuous Integration
 
 A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and pull
-request to `master`. On Node 22 it builds the Angular app and runs all safety nets:
+request to `master`, with two jobs:
 
-- **build** (`app-ng`)
-- **unit tests** (Vitest)
-- **contract tests** (OpenAPI)
-- **end-to-end tests** (Playwright; serves the built SPA on port 4100)
+- **validate** (Node 22): builds the Angular app and runs the safety nets - build
+  (`app-ng`), unit tests (Vitest), contract tests (OpenAPI), and end-to-end tests
+  (Playwright; serves the built SPA on port 4100).
+- **backend** (JDK 25): builds and tests the Spring Boot API (`api/`) via
+  `./gradlew build`, with a Postgres service for the JPA context.
 
 On failure, the Playwright HTML report is uploaded as a build artifact. There is no
 deploy step yet - a hosting target (GitHub Pages / Netlify / Vercel) will be added in
