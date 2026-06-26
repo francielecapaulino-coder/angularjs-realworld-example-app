@@ -82,13 +82,16 @@ skills documentadas, `docs/audit-report.md` atualizado ao final, e CI verde.
 - Reportar o score REAL final (sem forcar 95%); documentar.
 - DoD: score real documentado; CI verde.
 
-### Slice 029b — Pitest (backend): mutation testing Java
+### Slice 029b — Pitest (backend): avaliacao inicial
 - **Issue propria, separada da 029a** (decisao do usuario — toolchains distintas).
-- Configurar **Pitest** no backend (Gradle, plugin `info.solidsoft.pitest`), medir e
-  reportar o mutation score REAL do backend.
-- DoD: score real documentado; CI verde.
-- **Recorte exato (ordem/dependencia) a confirmar** com o usuario — proposta: 029a antes;
-  029b pode aguardar o backend ter endpoints reais para mutar algo significativo.
+- **Avaliacao inicial / exploratoria:** o backend e novo (skeleton, sem endpoints/logica
+  significativa), portanto **nao ha baseline** ainda. O objetivo desta slice NAO e atingir um
+  score; e **configurar o Pitest** (Gradle, plugin `info.solidsoft.pitest`), rodar e **reportar
+  o que houver** (provavelmente "no mutations to apply" ou score trivial), deixando o tooling
+  pronto para quando o backend ganhar logica real.
+- DoD: Pitest configurado + execucao real documentada (mesmo que sem mutantes); CI verde.
+- **Dependencia:** so faz sentido apos o backend ter logica de dominio; idealmente a **ultima**
+  slice (ou re-executar quando endpoints existirem). Nao bloqueia as demais.
 
 ---
 
