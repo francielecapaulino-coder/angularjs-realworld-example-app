@@ -55,6 +55,24 @@ skills documentadas, `docs/audit-report.md` atualizado ao final, e CI verde.
 - `docker-compose.yml`: `api` + `web` + **banco** (Postgres) com healthchecks e rede interna.
 - DoD: `docker compose up` sobe os servicos, app fala com a API via `/api`; capturar log de startup.
 
+### Slice 025a — Integration test real (frontend x backend containerizado)
+- **Objetivo:** uma camada de teste de integracao **real** que exercita o **Angular contra o
+  backend containerizado de verdade** (web + api + Postgres do compose), **sem mocks de rede**.
+- **Distincao explicita** dos testes existentes:
+  - **contract test** (`tests/contract`): estatico — valida paths/envelopes vs o **spec OpenAPI**
+    (e uma API publica viva); NAO usa o backend deste repo.
+  - **E2E atual** (`tests/e2e`): mocka a rede (`page.route`); NAO bate no backend real.
+  - **025a (novo):** sobe a stack do compose, aguarda health e roda testes **full-stack** SEM
+    mocks — fluxos reais via UI e/ou chamadas HTTP diretas ao backend (smoke de endpoints reais).
+- **Abordagem:** harness dedicado — `docker compose up -d` -> espera health -> roda um projeto
+  Playwright separado (sem `page.route`) e/ou checks HTTP contra `api` -> `docker compose down`.
+  Reutiliza a infra da 025; pode compartilhar orquestracao com o script Python da 028.
+- **Dependencia:** integration tests significativos exigem **endpoints reais** no backend
+  (hoje skeleton). Inicialmente: smoke minimo (ex.: `/actuator/health` ou primeiro endpoint
+  disponivel), expandindo conforme o backend cresce.
+- **CI:** liga-se a decisao #6 — provavelmente um **job dedicado** (sobe compose) por custo/tempo.
+- DoD: stack sobe no harness; testes reais rodam e passam; CI (job dedicado) verde; documentado.
+
 ### Slice 026 — Metricas (Micrometer + Prometheus)
 - Instrumentar o backend: Micrometer + Actuator Prometheus; **contador por endpoint** que
   incrementa a cada chamada (ex.: `http_server_requests` + tag por rota, ou contador custom).
@@ -97,9 +115,12 @@ skills documentadas, `docs/audit-report.md` atualizado ao final, e CI verde.
 
 ## 3. Estimativa
 
-- **Nucleo: 8 slices** — 023, 024, 025, 026, 027, 028, **029a (Stryker)**, **029b (Pitest)**.
-- Faixa realista: **8 a 9 slices** — 027 (observabilidade) ainda pode dividir em logs/traces.
+- **Nucleo: 9 slices** — 023, 024, 025, **025a (integration test real)**, 026, 027, 028,
+  **029a (Stryker)**, **029b (Pitest)**.
+- Faixa realista: **9 a 10 slices** — 027 (observabilidade) ainda pode dividir em logs/traces.
 - 029 foi **dividida em 029a (Stryker/frontend) e 029b (Pitest/backend)** — issues distintas.
+- **025a** adicionada: teste de integracao real (Angular x backend containerizado), distinto
+  do contract test (spec OpenAPI estatico) e do E2E mockado.
 
 ---
 
