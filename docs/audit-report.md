@@ -120,3 +120,9 @@ observabilidade que nao faz parte deste workspace:
 >   web up), app em `:8080` (HTTP 200), proxy `/api` -> backend (HTTP 401 do Spring Security,
 >   comprovando o roteamento), logs de startup capturados, `down -v` limpo. **Dockerfile(s) e
 >   docker-compose funcionais => requisito de infra atendido.**
+
+> - **Slice 025a:** camada de **integration test real** (`tests/integration`) que exercita o
+>   Angular contra o backend **containerizado** (compose), SEM mocks - distinta do contract test
+>   (OpenAPI estatico) e do e2e (rede mockada). Harness `scripts/run-integration.sh` (up/health/
+>   test/down via trap) + `playwright.integration.config.js`. Validado: **5 passed** contra a
+>   stack real (API direta 401, proxy nginx 401, app real renderiza), e2e mockado segue 39/39.
