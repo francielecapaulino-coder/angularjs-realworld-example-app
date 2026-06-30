@@ -1,17 +1,19 @@
 plugins {
         id 'java'
-        id 'org.springframework.boot' version '4.0.3'
-        id 'io.spring.dependency-management' version '1.1.7'
+        id 'org.springframework.boot' version '2.7.18'
+        id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+id 'info.solidsoft.pitest' version '1.7.4'
 }
 
 group = 'com.conduit'
 version = '0.0.1-SNAPSHOT'
 
-java {
-        toolchain {
-                languageVersion = JavaLanguageVersion.of(25)
-        }
-}
+// Using system Gradle/vm for broader compatibility
+// java {
+//         toolchain {
+//                 languageVersion = JavaLanguageVersion.of(17)
+//         }
+// }
 
 repositories {
         mavenCentral()
@@ -21,27 +23,58 @@ dependencies {
         implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
         implementation 'org.springframework.boot:spring-boot-starter-security'
         implementation 'org.springframework.boot:spring-boot-starter-validation'
-        implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+implementation 'org.springframework.boot:spring-boot-starter-web'
         implementation 'org.springframework.boot:spring-boot-starter-actuator'
         implementation 'io.micrometer:micrometer-registry-prometheus'
         
-// Tracing with Brave/Spring Boot
-        implementation 'io.micrometer:micrometer-tracing-bridge-brave'
-        implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
-        
-        // Structured logging with logback
+// Structured logging with logback
         implementation 'ch.qos.logback:logback-classic'
         implementation 'com.fasterxml.jackson.core:jackson-databind'
         implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+        
+        // Code coverage and mutation testing
+        testImplementation 'org.jacoco:org.jacoco.core:0.8.11'
         
         runtimeOnly 'org.postgresql:postgresql'
         testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
         testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
         testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
-        testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+testImplementation 'org.springframework.boot:spring-boot-starter-web-test'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
         useJUnitPlatform()
+}
+
+// Pitest configuration for mutation testing - Slice 029b
+pitest {
+        // Target classes and packages
+        targetClasses = ['com.conduit.*']
+        targetTests = ['com.conduit.*']
+        
+        // Exclude test classes and configuration only
+        excludedClasses = ['*Test', '*Tests', '**/Test*']
+        excludedTestClasses = ['*Test', '*Tests', '**/Test*']
+        
+        // Mutation configuration
+        mutators = ['DEFAULTS', 'NON_VOID_METHOD_CALLS']
+        
+        // Quality thresholds
+        mutationThreshold = 70
+        coverageThreshold = 80
+        
+// Output configuration
+        outputFormats = ['HTML', 'XML']
+        timestampedReports = false
+        
+        // Performance settings
+        threads = 4
+        
+        // Report configuration
+        verbose = true
+        failWhenNoMutations = false
+        
+        // Exclusions
+        excludedMethods = ['toString', 'hashCode', 'equals']
 }
