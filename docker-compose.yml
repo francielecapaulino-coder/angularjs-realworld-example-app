@@ -39,8 +39,8 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      # No actuator yet: a TCP check on 8080 confirms the app is listening.
-      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/8080'"]
+      # Use actuator health endpoint now that it's enabled
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -52,6 +52,21 @@ services:
     # The app is served here; nginx proxies /api -> api:8080 internally.
     ports:
       - "8080:80"
+    depends_on:
+      - api
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
     depends_on:
       - api
 

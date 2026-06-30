@@ -18,6 +18,10 @@ RUN ./gradlew --no-daemon clean bootJar -x test
 FROM eclipse-temurin:25-jre AS run
 WORKDIR /app
 
+# Install curl for health checks and install as root before switching to non-root user
+USER root
+RUN apt-get update && apt-get install -y curl && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Non-root runtime user.
 RUN groupadd --system spring && useradd --system --gid spring spring
 USER spring:spring
