@@ -8,9 +8,7 @@ import {
   afterRender 
 } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService }
-import { ThemeToggleComponent } from "../shared/components/theme-toggle.component";
-import { AppStateService } from '../core/auth/auth.service';
+import { AuthService } from '../core/auth/auth.service';
 import { APP_CONSTANTS } from '../core/config/app.constants';
 import { ThemeService } from '../core/theme/theme.service';
 import { AppStateService } from '../core/state/app-state.service';

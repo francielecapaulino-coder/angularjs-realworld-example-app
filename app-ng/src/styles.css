@@ -1,21 +1,63 @@
-/* You can add global styles to this file, and also import other style files */
+/* Angular 21 Dark Mode Theme System */
 
-/*
- * Dark mode overrides.
- *
- * The Conduit design system (demo.productionready.io/main.css) is light-only.
- * We layer a dark theme on top, activated by `data-theme="dark"` on <html>
- * (set by ThemeService and by the anti-FOUC inline script in index.html).
- * Scope: essential surfaces for readability, not a full redesign.
- */
+:root {
+  /* Material Design 3 light theme */
+  --md-sys-color-primary: #00674b;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #91f7c9;
+  --md-sys-color-secondary: #4d635a;
+  --md-sys-color-background: #fdfdf9;
+  --md-sys-color-on-background: #1a1c1a;
+  --md-sys-color-surface: #fdfdf9;
+  --md-sys-color-on-surface: #1a1c1a;
+  --md-sys-color-surface-variant: #dfe5df;
+  --md-sys-color-on-surface-variant: #434943;
+  --md-sys-color-outline: #73796f;
+  
+  /* Theme variables */
+  --bg: var(--md-sys-color-background);
+  --bg-elev: var(--md-sys-color-surface);
+  --text: var(--md-sys-color-on-surface);
+  --text-muted: var(--md-sys-color-on-surface-variant);
+  --border: var(--md-sys-color-outline);
+  --primary: var(--md-sys-color-primary);
+  --shadow: rgba(0, 0, 0, 0.1);
+}
 
+/* Dark theme */
 :root[data-theme='dark'] {
-  --bg: #0f1418;
-  --bg-elev: #1a2128;
-  --text: #d7dde2;
-  --text-muted: #9aa6b1;
-  --border: #2b343d;
-  --link: #5cb85c; /* Conduit brand green, kept for continuity */
+  --md-sys-color-primary: #5cb85c;
+  --md-sys-color-on-primary: #00391c;
+  --md-sys-color-secondary: #b3ccbf;
+  --md-sys-color-background: #111412;
+  --md-sys-color-on-background: #d0e5d8;
+  --md-sys-color-surface: #111412;
+  --md-sys-color-on-surface: #d0e5d8;
+  --md-sys-color-surface-variant: #434943;
+  --md-sys-color-on-surface-variant: #c2c9be;
+  --md-sys-color-outline: #8c9389;
+
+  --bg: var(--md-sys-color-background);
+  --bg-elev: var(--md-sys-color-surface);
+  --text: var(--md-sys-color-on-surface);
+  --text-muted: var(--md-sys-color-on-surface-variant);
+  --border: var(--md-sys-color-outline);
+  --primary: var(--md-sys-color-primary);
+  --shadow: rgba(255, 255, 255, 0.05);
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.3s ease, 
+              color 0.3s ease, 
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  transition: all 0.3s ease;
 }
 
 :root[data-theme='dark'] body {
