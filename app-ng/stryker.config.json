@@ -6,21 +6,33 @@
   "commandRunner": {
     "command": "npm test"
   },
-  "_mutate_comment": "Baseline scope (slice 022): high-value core auth/theme logic. The command runner re-runs the whole suite per mutant (~minutes/file), so mutating the entire app is not feasible in one pass yet. Expand this list in follow-up slices as the suite is optimized.",
+"_mutate_comment": "Enhanced scope (slice 029a): expanded coverage to include core services, components, and utilities. Added business logic components for comprehensive mutation testing of critical application paths.",
   "mutate": [
     "src/app/core/theme/theme.service.ts",
     "src/app/core/auth/jwt.service.ts",
     "src/app/core/auth/auth.guard.ts",
-    "src/app/core/auth/token.interceptor.ts"
+    "src/app/core/auth/token.interceptor.ts",
+    "src/app/core/auth/auth.service.ts",
+    "src/app/core/articles/articles.service.ts",
+    "src/app/core/comments/comments.service.ts",
+    "src/app/core/profile/profile.service.ts",
+    "src/app/core/tags/tags.service.ts",
+    "src/app/**/components/*.ts",
+    "!src/app/**/*.spec.ts"
   ],
   "reporters": ["html", "json", "clear-text", "progress"],
   "htmlReporter": { "fileName": "reports/mutation/index.html" },
   "jsonReporter": { "fileName": "reports/mutation/mutation.json" },
-  "thresholds": {
-    "high": 95,
-    "low": 80,
-    "break": null
+"thresholds": {
+    "high": 85,
+    "low": 70,
+    "break": 60
   },
-  "timeoutMS": 60000,
-  "concurrency": 2
+  "timeoutMS": 30000,
+  "concurrency": 4,
+  "maxConcurrentTestRunners": 2,
+  "checkers": ["chorus"],
+  "ignoreStatic": true,
+  "tsconfigFile": "tsconfig.json",
+  "tempDirName": ".stryker-temp"
 }

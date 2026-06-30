@@ -1,13 +1,15 @@
 {
   "name": "app-ng",
   "version": "0.0.0",
-  "scripts": {
+"scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:mutation": "stryker run"
+    "test:mutation": "stryker run",
+    "test:mutation:report": "stryker run --reporters=html,json",
+    "test:mutation:quick": "stryker run --timeoutFactor=0.5 --concurrency=6"
   },
   "private": true,
   "packageManager": "npm@10.9.8",
