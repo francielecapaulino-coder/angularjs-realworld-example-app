@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "generator": "validate-stack.py",
+    "generated_at": "2026-06-30T18:05:50.719825",
+    "version": "slice-028",
+    "format": "json"
+  },
+  "validation_results": {
+    "validation_id": "validation-20260630-180550",
+    "start_time": "2026-06-30T18:05:50.447308",
+    "services": {
+      "db": false,
+      "api": false,
+      "web": false,
+      "prometheus": false,
+      "loki": false,
+      "tempo": false,
+      "grafana": false,
+      "promtail": true
+    },
+    "tests": [
+      {
+        "name": "docker_services",
+        "status": {
+          "db": false,
+          "api": false,
+          "web": false,
+          "prometheus": false,
+          "loki": false,
+          "tempo": false,
+          "grafana": false,
+          "promtail": true
+        },
+        "timestamp": "2026-06-30T18:05:50.638228"
+      },
+      {
+        "name": "health_endpoints",
+        "status": {
+          "frontend": false,
+          "api_health": false,
+          "api_actuator": false
+        },
+        "timestamp": "2026-06-30T18:05:50.638232"
+      },
+      {
+        "name": "prometheus_metrics",
+        "status": {
+          "prometheus_health": false
+        },
+        "timestamp": "2026-06-30T18:05:50.638233"
+      },
+      {
+        "name": "log_collection",
+        "status": {
+          "log_files": false,
+          "promtail_healthy": true,
+          "loki_healthy": false,
+          "overall": false
+        },
+        "timestamp": "2026-06-30T18:05:50.638234"
+      }
+    ],
+    "overall_status": "FAIL",
+    "duration_seconds": 0.2725,
+    "errors": [],
+    "end_time": "2026-06-30T18:05:50.719808"
+  }
+}

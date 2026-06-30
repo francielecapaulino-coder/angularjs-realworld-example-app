@@ -1,0 +1,13 @@
+# Requirements for Slice 028 - Stack Validation Script
+
+# HTTP async client
+aiohttp>=3.8.0
+
+# Docker SDK
+docker>=6.0.0
+
+# YAML processing
+PyYAML>=6.0
+
+# Data validation and formatting
+jsonschema>=4.0.0

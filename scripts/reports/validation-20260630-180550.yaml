@@ -1,0 +1,42 @@
+metadata:
+  format: yaml
+  generated_at: '2026-06-30T18:05:50.719885'
+  generator: validate-stack.py
+  version: slice-028
+validation_results:
+  duration_seconds: 0.2725
+  end_time: '2026-06-30T18:05:50.719808'
+  errors: []
+  overall_status: FAIL
+  services: &id001
+    api: false
+    db: false
+    grafana: false
+    loki: false
+    prometheus: false
+    promtail: true
+    tempo: false
+    web: false
+  start_time: '2026-06-30T18:05:50.447308'
+  tests:
+  - name: docker_services
+    status: *id001
+    timestamp: '2026-06-30T18:05:50.638228'
+  - name: health_endpoints
+    status:
+      api_actuator: false
+      api_health: false
+      frontend: false
+    timestamp: '2026-06-30T18:05:50.638232'
+  - name: prometheus_metrics
+    status:
+      prometheus_health: false
+    timestamp: '2026-06-30T18:05:50.638233'
+  - name: log_collection
+    status:
+      log_files: false
+      loki_healthy: false
+      overall: false
+      promtail_healthy: true
+    timestamp: '2026-06-30T18:05:50.638234'
+  validation_id: validation-20260630-180550

@@ -1,12 +1,4 @@
-# Containerized Conduit stack (slice 025-027): Angular SPA + Spring Boot API + Full LGTM Stack.
-#
-#   docker compose up --build      # build images and start the stack
-#   open http://localhost:8080     # the app (nginx serves the SPA, proxies /api -> api)
-#   open http://localhost:3000     # Grafana dashboards
-#   docker compose down            # stop and remove containers
-#
-# The SPA calls the relative `/api` base; nginx reverse-proxies it to the `api` service.
-# Full observability: Prometheus (metrics) + Loki (logs) + Tempo (traces) + Grafana (dashboards).
+version: "3.8"
 
 services:
   db:
@@ -67,60 +59,5 @@ services:
     depends_on:
       - api
 
-loki:
-    image: grafana/loki:latest
-    ports:
-      - "3100:3100"
-    command:
-      - -config.file=/etc/loki/local-config.yaml
-      - -validation.allow-structured-metadata=false
-    volumes:
-      - ./loki-config.yml:/etc/loki/local-config.yaml
-      - loki-data:/var/loki
-
-  tempo:
-    image: grafana/tempo:latest
-    ports:
-      - "3200:3200"
-      - "4317:4317"
-      - "4318:4318"
-    command:
-      - "--target=all"
-      - "--storage.trace.backend=local"
-      - "--storage.trace.local.path=/var/tempo"
-      - "--auth-enabled=false"
-      - "--search.enabled=true"
-    volumes:
-      - tempo-data:/var/tempo
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
-    depends_on:
-      - prometheus
-      - loki
-      - tempo
-
-  promtail:
-    image: grafana/promtail:latest
-    ports:
-      - "9080:9080"
-    volumes:
-      - ./promtail-config.yml:/etc/promtail/config.yml
-      - ./api/logs:/var/log/app
-    command: -config.file=/etc/promtail/config.yml
-    depends_on:
-      - loki
-
 volumes:
   db-data:
-  grafana-data:
-  tempo-data:
-  loki-data:
