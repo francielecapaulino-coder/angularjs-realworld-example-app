@@ -8,8 +8,12 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:mutation": "stryker run",
-    "test:mutation:report": "stryker run --reporters=html,json",
-    "test:mutation:quick": "stryker run --timeoutFactor=0.5 --concurrency=6"
+"test:mutation:report": "stryker run --reporters=html,json",
+    "test:mutation:quick": "stryker run --timeoutFactor=0.5 --concurrency=6",
+    "cypress:run": "cypress run --spec cypress/e2e/integration.cy.ts",
+    "cypress:open": "cypress open",
+    "wdio": "wdio run wdio.conf.ts",
+    "test:e2e": "npm run cypress:run && npm run wdio"
   },
   "private": true,
   "packageManager": "npm@10.9.8",
