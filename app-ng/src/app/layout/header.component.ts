@@ -1,8 +1,19 @@
-import { Component, inject } from '@angular/core';
+import { 
+  Component, 
+  inject, 
+  computed, 
+  signal, 
+  effect, 
+  DestroyRef,
+  afterRender 
+} from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../core/auth/auth.service';
 import { APP_CONSTANTS } from '../core/config/app.constants';
 import { ThemeService } from '../core/theme/theme.service';
+import { AppStateService } from '../core/state/app-state.service';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 /**
  * Top navbar. Mirrors legacy src/js/layout/header.html, with reactive auth
@@ -17,14 +28,164 @@ import { ThemeService } from '../core/theme/theme.service';
 export class HeaderComponent {
   private readonly auth = inject(AuthService);
   private readonly themeService = inject(ThemeService);
+  private readonly appState = inject(AppStateService);
+  private readonly destroyRef = inject(DestroyRef);
 
+  // Component internal signals
+  private readonly menuOpenSig = signal<boolean>(false);
+  private readonly searchQuerySig = signal<string>('');
+
+  // Computed signals
   readonly appName = APP_CONSTANTS.appName;
   readonly isAuthenticated = this.auth.isAuthenticated;
   readonly currentUser = this.auth.currentUser;
-  readonly theme = this.themeService.theme;
+readonly theme = this.themeService.theme;
+  readonly isDarkMode = this.appState.isDarkMode;
+  readonly loading = this.appState.isLoading;
+  readonly error = this.appState.error;
 
-  /** Toggle between light and dark themes. */
-  toggleTheme(): void {
-    this.themeService.toggle();
+  // Enhanced computed properties
+  readonly menuOpen = this.menuOpenSig.asReadonly();
+  readonly searchQuery = this.searchQuerySig.asReadonly();
+  
+  readonly userDisplay = computed(() => {
+    const user = this.auth.currentUser();
+    return user ? user.username : 'Guest';
+  });
+
+  readonly userAvatar = computed(() => {
+    const user = this.auth.currentUser();
+    return user?.image || 'https://api.realworld.io/images/smiley-cyrus.jpg';
+  });
+
+  // Reactive search with Angular 21 features
+  private readonly searchResults$ = toObservable(this.searchQuerySig).pipe(
+    debounceTime(300),
+    distinctUntilChanged()
+  );
+
+  constructor() {
+    this.initializeEffects();
+    this.setupRenderHooks();
   }
+
+  /** Toggle mobile menu */
+  toggleMenu(): void {
+    this.menuOpenSig.update(open => !open);
+  }
+
+  /** Close menu */
+  closeMenu(): void {
+    this.menuOpenSig.set(false);
+  }
+
+  /** Handle search input */
+  onSearch(query: string): void {
+    this.searchQuerySig.set(query);
+  }
+
+  /** Clear search */
+  clearSearch(): void {
+    this.searchQuerySig.set('');
+  }
+
+  /** Toggle theme with app state integration */
+  toggleTheme(): void {
+    this.appState.toggleTheme();
+  }
+
+  /** Handle logout */
+  handleLogout(): void {
+    this.auth.purgeAuth();
+    this.closeMenu();
+  }
+
+  /** Initialize reactive effects */
+  private initializeEffects(): void {
+    // Auto-close menu on authentication change
+    effect(() => {
+      this.auth.isAuthenticated();
+      this.closeMenu();
+    });
+
+    // Handle search results
+    effect(() => {
+      const query = this.searchQuerySig();
+      if (query.length >= 2) {
+        this.performSearch(query);
+      }
+    });
+  }
+
+  /** Setup afterRender hooks for performance */
+  private setupRenderHooks(): void {
+    afterRender({
+      mixedReadWrite: () => {
+        // Set up keyboard shortcuts
+        this.setupKeyboardShortcuts();
+      },
+      read: () => {
+        // Read-only operations like scroll position
+        return document.documentElement.scrollTop;
+      },
+      write: () => {
+        // Write operations like updating aria attributes
+        this.updateAccessibilityAttributes();
+      }
+    });
+  }
+
+  /** Perform search (placeholder for actual implementation) */
+  private performSearch(query: string): void {
+    console.log('Searching for:', query);
+    // Implementation would go here
+  }
+
+  /** Setup keyboard shortcuts */
+  private setupKeyboardShortcuts(): void {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key === 'k') {
+        event.preventDefault();
+        this.focusSearch();
+      }
+      if (event.key === 'Escape' && this.menuOpen()) {
+        this.closeMenu();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    this.destroyRef.onDestroy(() => {
+      document.removeEventListener('keydown', handleKeyDown);
+    });
+  }
+
+  /** Focus search input */
+  private focusSearch(): void {
+    const searchInput = document.querySelector('[data-cy="search-input"]') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.focus();
+    }
+  }
+
+  /** Update accessibility attributes */
+  private updateAccessibilityAttributes(): void {
+    // Update ARIA attributes dynamically
+    const menuButton = document.querySelector('[data-cy="menu-button"]');
+    if (menuButton) {
+      menuButton.setAttribute('aria-expanded', this.menuOpen().toString());
+    }
+  }
+
+  /** Get theme icon based on current theme */
+  readonly themeIcon = computed(() => {
+    const theme = this.appState.theme();
+    switch (theme) {
+      case 'light':
+        return 'light_mode';
+      case 'dark':
+        return 'dark_mode';
+      default:
+        return 'brightness_auto';
+    }
+  });
 }
