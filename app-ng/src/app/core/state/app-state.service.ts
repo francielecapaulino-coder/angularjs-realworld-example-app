@@ -1,5 +1,6 @@
 import { Injectable, inject, signal, computed, effect, toObservable } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, timer } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 /**
@@ -56,11 +57,21 @@ export class AppStateService {
   readonly error$ = toObservable(this.errorSig);
   readonly theme$ = toObservable(this.themeSig);
 
-  constructor() {
+constructor() {
     this.initializeConnectionMonitoring();
     this.initializePerformanceTracking();
+    this.initializeDraftSystem();
     this.loadSavedPreferences();
     this.applyTheme();
+  }
+
+  private initializeDraftSystem(): void {
+    // Initialize draft restoration on startup
+    const draftCount = localStorage.getItem('conduit-draft-count');
+    if (draftCount && parseInt(draftCount) > 0) {
+      this.setLoading(true);
+      console.log(`${parseInt(draftCount)} drafts found in localStorage`);
+    }
   }
 
   /** Set loading state */

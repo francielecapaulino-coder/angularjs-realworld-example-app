@@ -1,0 +1,75 @@
+import { Component, inject, computed } from '@angular/core';
+import { DraftService } from '../../core/draft/draft.service';
+
+@Component({
+  selector: 'app-draft-indicator',
+  standalone: true,
+  template: `
+    <div class="draft-indicator" [class.is-dirty]="isDirty()">
+      <span class="status-text">{{ statusText() }}</span>
+      <span class="last-saved" *ngIf="lastSavedTime()">{{ lastSavedTime() }}</span>
+    </div>
+  `,
+  styles: [`
+    .draft-indicator {
+      padding: 8px 16px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    .draft-indicator.is-dirty {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: white;
+    }
+    
+    .status-text {
+      font-weight: 500;
+    }
+    
+    .last-saved {
+      margin-left: 8px;
+      opacity: 0.7;
+    }
+  `]
+})
+export class DraftIndicatorComponent {
+  private readonly draftService = inject(DraftService);
+
+  readonly saveStatus = this.draftService.saveStatus;
+  readonly currentDraft = this.draftService.currentDraft;
+
+  readonly isDirty = computed(() => {
+    const status = this.saveStatus();
+    return status === 'dirty';
+  });
+
+  readonly statusText = computed(() => {
+    const status = this.saveStatus();
+    switch (status) {
+      case 'saved': return 'All changes saved';
+      case 'saving': return 'Saving...';
+      case 'dirty': return 'Unsaved changes';
+      default: return '';
+    }
+  });
+
+  readonly lastSavedTime = computed(() => {
+    const draft = this.currentDraft();
+    if (!draft || draft.updatedAt === draft.createdAt) return '';
+    
+    const time = Date.now() - draft.updatedAt;
+    const minutes = Math.floor(time / 60000);
+    
+    if (minutes < 1) return 'Saved just now';
+    if (minutes < 60) return `Saved ${minutes}m ago`;
+    
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Saved ${hours}h ago`;
+    
+    return `Saved ${Math.floor(hours / 24)}d ago`;
+  });
+}

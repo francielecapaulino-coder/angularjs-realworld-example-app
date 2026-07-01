@@ -1,0 +1,159 @@
+import { Injectable, signal, computed } from '@angular/core';
+import { timer, Subject } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
+
+export interface Draft {
+  id: string;
+  title: string;
+  description: string;
+  body: string;
+  tags: string[];
+  createdAt: number;
+  updatedAt: number;
+  isDirty?: boolean;
+}
+
+@Injectable({ providedIn: 'root' })
+export class DraftService {
+  private readonly STORAGE_KEY = 'conduit-drafts';
+  private readonly AUTOSAVE_DELAY = 2000;
+
+  private readonly currentDraftSig = signal<Draft | null>(null);
+  private readonly saveStatusSig = signal<'saved' | 'saving' | 'dirty'>('saved');
+
+  readonly currentDraft = this.currentDraftSig.asReadonly();
+  readonly saveStatus = this.saveStatusSig.asReadonly();
+
+  private saveSubject = new Subject<void>();
+  private destroy$ = new Subject<void>();
+
+  constructor() {
+    this.setupAutoSave();
+    this.loadExistingDrafts();
+  }
+
+  createDraft(): Draft {
+    const draft: Draft = {
+      id: this.generateId(),
+      title: '',
+      description: '',
+      body: '',
+      tags: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+
+    this.currentDraftSig.set(draft);
+    this.markDirty();
+    return draft;
+  }
+
+  updateDraft(updates: Partial<Draft>): void {
+    const current = this.currentDraftSig();
+    if (!current) return;
+
+    const updated = { ...current, ...updates, updatedAt: Date.now(), isDirty: true };
+    this.currentDraftSig.set(updated);
+    this.saveSubject.next();
+    this.saveToStorage();
+  }
+
+  async saveDraft(): Promise<void> {
+    const draft = this.currentDraftSig();
+    if (!draft) return;
+
+    this.saveStatusSig.set('saving');
+    await this.saveToStorage();
+    this.saveStatusSig.set('saved');
+  }
+
+  deleteDraft(): void {
+    const draft = this.currentDraftSig();
+    if (!draft) return;
+
+    this.removeFromStorage(draft.id);
+    this.currentDraftSig.set(null);
+  }
+
+  hasExistingDrafts(): boolean {
+    try {
+      const drafts = localStorage.getItem(this.STORAGE_KEY);
+      return drafts ? JSON.parse(drafts).length > 0 : false;
+    } catch {
+      return false;
+    }
+  }
+
+  restoreLatestDraft(): Draft | null {
+    try {
+      const drafts = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]');
+      if (drafts.length > 0) {
+        const latest = drafts[0];
+        this.currentDraftSig.set(latest);
+        return latest;
+      }
+    } catch (error) {
+      console.error('Error restoring draft:', error);
+    }
+    return null;
+  }
+
+  private markDirty(): void {
+    this.saveStatusSig.set('dirty');
+  }
+
+  private setupAutoSave(): void {
+    this.saveSubject.pipe(
+      debounceTime(this.AUTOSAVE_DELAY),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.saveDraft();
+    });
+  }
+
+  private async saveToStorage(): Promise<void> {
+    const current = this.currentDraftSig();
+    if (!current) return;
+
+    try {
+      const drafts = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]');
+      const index = drafts.findIndex((d: Draft) => d.id === current.id);
+
+      if (index >= 0) {
+        drafts[index] = current;
+      } else {
+        drafts.unshift(current);
+      }
+
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(drafts));
+    } catch (error) {
+      console.error('Error saving draft:', error);
+    }
+  }
+
+  private removeFromStorage(id: string): void {
+    try {
+      const drafts = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]');
+      const filtered = drafts.filter((d: Draft) => d.id !== id);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filtered));
+    } catch (error) {
+      console.error('Error deleting draft:', error);
+    }
+  }
+
+  private loadExistingDrafts(): void {
+    const hasDrafts = this.hasExistingDrafts();
+    if (hasDrafts) {
+      console.log('Existing drafts found in localStorage');
+    }
+  }
+
+  private generateId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
